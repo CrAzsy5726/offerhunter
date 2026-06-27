@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+*.bak
+_fix.py
+_fix2.py
+_fix3.py
