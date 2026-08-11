@@ -120,7 +120,7 @@ async def analyze_match(
     job_text: JD原文（如果之前已通过parse_jd解析过，可留空让工具自动从上下文获取）。"""
 
     tid = _get_thread_id(config)
-    cache = _thread_cache.get(tid, {})
+    cache = _thread_cache.setdefault(tid, {})
 
     # Resolve resume text
     if not resume_text:

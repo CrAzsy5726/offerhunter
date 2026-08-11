@@ -13,7 +13,8 @@ class LoggingTimingMiddleware(AgentMiddleware):
     async def awrap_model_call(self, request: Any, handler: Any) -> Any:
         start = time.perf_counter()
         msg_count = len(request.state.get("messages", [])) if hasattr(request, "state") else 0
-        logger.info("[Agent] LLM call starting (history: %d messages)", msg_count)
+        tool_names = [t.name for t in request.tools] if hasattr(request, 'tools') else []
+        logger.info("[Agent] LLM call starting (history: %d messages, tools: %s)", msg_count, tool_names)
         try:
             response = await handler(request)
             elapsed = time.perf_counter() - start

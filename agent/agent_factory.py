@@ -99,15 +99,20 @@ def _get_classifier():
 
 async def classify_intent(message: str) -> tuple[str, str]:
     llm = _get_classifier()
-    prompt = INTENT_CLASSIFY_PROMPT.format(message=message[:500])
+    # Take first 200 and last 300 chars to capture both the content and the user's request
+    short = (message[:200] + " ... " + message[-300:]) if len(message) > 500 else message
+    prompt = INTENT_CLASSIFY_PROMPT.format(message=short)
     try:
         resp = await llm.ainvoke([HumanMessage(content=prompt)])
         raw = resp.content.strip().lower() if hasattr(resp, "content") else str(resp).strip().lower()
     except Exception:
+        logger.exception("Intent classification failed")
         return "other", INTENT_LABELS["other"]
     for key in INTENT_LABELS:
         if key in raw:
+            logger.info("Intent classified: %s (%s) for msg[:200]=%r", key, INTENT_LABELS[key], short[:80])
             return key, INTENT_LABELS[key]
+    logger.warning("Intent fallback to 'other', raw response: %r", raw)
     return "other", INTENT_LABELS["other"]
 
 # ---- Single agent ----
