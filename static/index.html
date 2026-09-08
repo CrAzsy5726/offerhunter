@@ -272,6 +272,29 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .file-tag button { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; }
 .file-tag button:hover { color: var(--error); }
 .hint-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; }
+.hint-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+.hint-chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.28rem 0.7rem; font-size: 0.78rem;
+  background: var(--card-bg); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 999px;
+  cursor: pointer; transition: all 0.18s ease; white-space: nowrap;
+}
+.hint-chip:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-glow); }
+
+/* 初始功能列表（竖向、主题化） */
+.quick-row { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; margin-bottom: 0.8rem; }
+.quick-card {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; max-width: 20rem;
+  cursor: pointer; padding: 0.5rem 0.9rem;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 10px; transition: all 0.2s;
+}
+.quick-card:hover { border-color: var(--primary); background: var(--primary-glow); }
+.quick-card .qc-icon { font-size: 1.1rem; line-height: 1; }
+.quick-card .qc-title { font-weight: 600; font-size: 0.85rem; }
+.quick-card .qc-desc { font-size: 0.72rem; color: var(--text-secondary); }
 
 /* 拖拽区 */
 #drop-overlay {
@@ -313,11 +336,11 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
   #tool-status { min-width: auto !important; left: 0.4rem !important; right: 0.4rem !important; transform: none !important; border-radius: 6px; font-size: 0.72rem; padding: 0.5rem 0.8rem; }
   #scroll-bottom-btn { bottom: 110px; right: 10px; width: 40px; height: 40px; font-size: 0.8rem; }
   .btn { font-size: 0.72rem; padding: 0.35rem 0.7rem; }
-  .quick-row { flex-direction: row !important; gap: 0.25rem !important; margin-bottom: 0.3rem !important; }
-  .quick-card { flex: 1 !important; padding: 0.3rem 0.25rem !important; border-radius: 6px !important; }
-  .quick-card > div:first-child { font-size: 0.95rem !important; margin-bottom: 0 !important; }
-  .quick-card > div:nth-child(2) { font-size: 0.62rem !important; }
-  .quick-card > div:last-child { display: none !important; }
+  .quick-row { gap: 0.3rem !important; margin-bottom: 0.4rem !important; }
+  .quick-card { padding: 0.42rem 0.7rem !important; }
+  .quick-card .qc-icon { font-size: 1rem !important; }
+  .quick-card .qc-title { font-size: 0.8rem !important; }
+  .quick-card .qc-desc { font-size: 0.66rem !important; }
   .message.wide .bubble { padding: 0.15rem 0 !important; }
   .bg-animated::before { width: 300px; height: 300px; }
   .bg-animated::after { width: 250px; height: 250px; }
@@ -364,14 +387,20 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
     <div class="input-area">
       <div class="inner">
         <div id="file-tags"></div>
+        <div class="hint-chips" id="hint-chips">
+          <span class="hint-chip" onclick="quickStart('match')">📄 分析简历</span>
+          <span class="hint-chip" onclick="quickStart('interview')">🎤 模拟面试</span>
+          <span class="hint-chip" onclick="quickStart('strategy')">📋 求职策略</span>
+          <span class="hint-chip" onclick="quickStart('pivot')">🔄 职业转型</span>
+          <span class="hint-chip" onclick="quickStart('salary')">💰 薪资谈判</span>
+        </div>
         <form id="chat-form">
-          <textarea id="user-input" rows="2" placeholder="粘贴简历、JD，或说'帮我模拟面试'、'找上海前端工作'、'从Java转AI'..." onkeydown="handleKeyDown(event)"></textarea>
+          <textarea id="user-input" rows="2" placeholder="输入消息，或粘贴简历 / JD..." onkeydown="handleKeyDown(event)"></textarea>
           <label class="btn btn-secondary" style="cursor:pointer;padding:0.75rem 1rem;" title="上传文件">
             📎<input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleFileSelect(event)" id="file-input">
           </label>
           <button type="submit" class="btn btn-primary btn-send">发送</button>
         </form>
-        <p class="hint-text" id="hint-text">💡 什么都可以问：分析简历 · 模拟面试 · 求职策略 · 职业转型 · 薪资谈判</p>
       </div>
     </div>
   </div>
@@ -389,27 +418,18 @@ var _warmCSS=document.getElementById('warm-theme').outerHTML;function toggleThem
 // ===== 状态 =====
 const WELCOME_MSG = `<div style="padding:0.5rem 0;">
   <p style="font-size:1.15rem;margin-bottom:1.2rem;text-align:center;">你好！我是 <span style="color:#a78bfa;font-weight:700;">Offer 捕手</span>，你的全能 AI 求职助手。</p>
-  <div class="quick-row" style="display:flex;gap:0.75rem;margin-bottom:0.8rem;">
-    <div class="quick-card" onclick="quickStart('match')" style="cursor:pointer;flex:1;padding:1.2rem 0.8rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;text-align:center;transition:all 0.2s;"
-         onmouseenter="this.style.background='rgba(99,102,241,0.18)';this.style.borderColor='rgba(99,102,241,0.5)';this.style.transform='translateY(-2px)'"
-         onmouseleave="this.style.background='rgba(99,102,241,0.08)';this.style.borderColor='rgba(99,102,241,0.2)';this.style.transform=''">
-      <div style="font-size:1.6rem;margin-bottom:0.3rem;">📄</div>
-      <div style="font-weight:600;font-size:0.85rem;">分析匹配</div>
-      <div style="font-size:0.7rem;opacity:0.5;margin-top:0.2rem;">简历 + JD 测评</div>
+  <div class="quick-row">
+    <div class="quick-card" onclick="quickStart('match')">
+      <div class="qc-icon">📄</div>
+      <div><div class="qc-title">分析匹配</div><div class="qc-desc">简历 + JD 测评</div></div>
     </div>
-    <div class="quick-card" onclick="quickStart('interview')" style="cursor:pointer;flex:1;padding:1.2rem 0.8rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;text-align:center;transition:all 0.2s;"
-         onmouseenter="this.style.background='rgba(99,102,241,0.18)';this.style.borderColor='rgba(99,102,241,0.5)';this.style.transform='translateY(-2px)'"
-         onmouseleave="this.style.background='rgba(99,102,241,0.08)';this.style.borderColor='rgba(99,102,241,0.2)';this.style.transform=''">
-      <div style="font-size:1.6rem;margin-bottom:0.3rem;">🎤</div>
-      <div style="font-weight:600;font-size:0.85rem;">模拟面试</div>
-      <div style="font-size:0.7rem;opacity:0.5;margin-top:0.2rem;">逐题考核评分</div>
+    <div class="quick-card" onclick="quickStart('interview')">
+      <div class="qc-icon">🎤</div>
+      <div><div class="qc-title">模拟面试</div><div class="qc-desc">逐题考核评分</div></div>
     </div>
-    <div class="quick-card" onclick="quickStart('salary')" style="cursor:pointer;flex:1;padding:1.2rem 0.8rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;text-align:center;transition:all 0.2s;"
-         onmouseenter="this.style.background='rgba(99,102,241,0.18)';this.style.borderColor='rgba(99,102,241,0.5)';this.style.transform='translateY(-2px)'"
-         onmouseleave="this.style.background='rgba(99,102,241,0.08)';this.style.borderColor='rgba(99,102,241,0.2)';this.style.transform=''">
-      <div style="font-size:1.6rem;margin-bottom:0.3rem;">💰</div>
-      <div style="font-weight:600;font-size:0.85rem;">薪酬查询</div>
-      <div style="font-size:0.7rem;opacity:0.5;margin-top:0.2rem;">薪资谈判指导</div>
+    <div class="quick-card" onclick="quickStart('salary')">
+      <div class="qc-icon">💰</div>
+      <div><div class="qc-title">薪酬查询</div><div class="qc-desc">薪资谈判指导</div></div>
     </div>
   </div>
   <p style="font-size:0.8rem;opacity:0.4;text-align:center;">或直接输入任何内容开始对话</p>
@@ -523,7 +543,13 @@ function handleKeyDown(e) {
 }
 
 function quickStart(mode) {
-  const triggers = { match: '你好，我想做简历和JD的匹配分析', interview: '帮我模拟面试', salary: '帮我查一下薪资水平' };
+  const triggers = {
+    match: '你好，我想做简历和JD的匹配分析',
+    interview: '帮我模拟面试',
+    strategy: '帮我制定求职策略，找找工作',
+    pivot: '我想规划一下职业转型',
+    salary: '帮我查一下薪资水平',
+  };
   if (isAnalyzing) return;
   addMessage('user', triggers[mode]);
   scrollToBottom();
