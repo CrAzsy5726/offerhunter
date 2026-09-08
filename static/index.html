@@ -272,10 +272,10 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .file-tag button { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; }
 .file-tag button:hover { color: var(--error); }
 .hint-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; }
-.hint-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+.hint-chips { display: flex; flex-wrap: nowrap; justify-content: center; gap: 0.22rem; margin-bottom: 0.5rem; }
 .hint-chip {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.28rem 0.7rem; font-size: 0.78rem;
+  display: inline-flex; align-items: center; gap: 0.15rem;
+  padding: 0.26rem 0.42rem; font-size: 0.7rem;
   background: var(--card-bg); color: var(--text-secondary);
   border: 1px solid var(--border); border-radius: 999px;
   cursor: pointer; transition: all 0.18s ease; white-space: nowrap;
@@ -285,16 +285,33 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 /* 初始功能列表（竖向、主题化） */
 .quick-row { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; margin-bottom: 0.8rem; }
 .quick-card {
+  position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center; gap: 0.6rem;
   width: 100%; max-width: 20rem;
   cursor: pointer; padding: 0.5rem 0.9rem;
   background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 10px; transition: all 0.2s;
+  border-radius: 10px; transition: border-color 0.2s;
 }
-.quick-card:hover { border-color: var(--primary); background: var(--primary-glow); }
-.quick-card .qc-icon { font-size: 1.1rem; line-height: 1; }
-.quick-card .qc-title { font-weight: 600; font-size: 0.85rem; }
-.quick-card .qc-desc { font-size: 0.72rem; color: var(--text-secondary); }
+.quick-card:hover { border-color: var(--primary); }
+.quick-card::before {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+.quick-card:hover::before {
+  animation: quick-ripple 0.6s ease-out;
+}
+@keyframes quick-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(14); opacity: 0; }
+}
+.quick-card .qc-icon { position: relative; font-size: 1.1rem; line-height: 1; }
+.quick-card .qc-title { position: relative; font-weight: 600; font-size: 0.85rem; }
+.quick-card .qc-desc { position: relative; font-size: 0.72rem; color: var(--text-secondary); }
 
 /* 拖拽区 */
 #drop-overlay {
