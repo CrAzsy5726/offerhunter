@@ -31,6 +31,8 @@ async def chat(req: ChatRequest):
         agent = get_agent()
         config = {"configurable": {"thread_id": thread_id}}
 
+        _report_sent = False
+
         try:
             async for event in agent.astream_events(
                 {"messages": [HumanMessage(content=req.message)]},
@@ -40,6 +42,8 @@ async def chat(req: ChatRequest):
                 evt = event["event"]
 
                 if evt == "on_chat_model_stream":
+                    if _report_sent:
+                        continue
                     chunk = event["data"].get("chunk")
                     if chunk and hasattr(chunk, "content") and chunk.content:
                         token_text = chunk.content
@@ -68,11 +72,18 @@ async def chat(req: ChatRequest):
                         "name": tool_name,
                         "output_preview": str(output)[:300] if output else "",
                     })
+                    # Send report immediately after analyze_match, before LLM generates text
+                    if tool_name == "analyze_match":
+                        report = _thread_cache.get(thread_id, {}).get("report")
+                        if report:
+                            _report_sent = True
+                            yield _sse("report", {"report": report.model_dump()})
 
-            # Check for match report
-            report = _thread_cache.get(thread_id, {}).get("report")
-            if report:
-                yield _sse("report", {"report": report.model_dump()})
+            # Fallback: report not yet sent
+            if not _report_sent:
+                report = _thread_cache.get(thread_id, {}).get("report")
+                if report:
+                    yield _sse("report", {"report": report.model_dump()})
 
             yield _sse("done", {"thread_id": thread_id})
 
