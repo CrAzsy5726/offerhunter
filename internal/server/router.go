@@ -25,6 +25,9 @@ func NewRouter() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.POST("/chat", handlers.Chat)
+		api.POST("/resume/upload", handlers.ResumeUpload)
+		api.POST("/market", handlers.Market)
+		api.POST("/export", handlers.Export)
 	}
 
 	return r
