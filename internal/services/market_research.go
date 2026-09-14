@@ -19,7 +19,7 @@ type MarketResearchService struct{}
 
 func (s *MarketResearchService) Research(ctx context.Context, jobInfo, jobPreference string) (*models.MarketInfo, error) {
 	searchQuery := fmt.Sprintf("%s %s 薪资 技能要求 招聘 应届生", jobInfo, jobPreference)
-	searchResults := s.searchDDG(searchQuery)
+	searchResults := SearchDDG(searchQuery, 5)
 
 	if jobPreference == "" {
 		jobPreference = "不限"
@@ -44,7 +44,9 @@ func (s *MarketResearchService) Research(ctx context.Context, jobInfo, jobPrefer
 	return info, nil
 }
 
-func (s *MarketResearchService) searchDDG(query string) string {
+// SearchDDG performs a DuckDuckGo HTML search and returns number-prefixed
+// snippet lines (up to limit results). Returns "" on any error.
+func SearchDDG(query string, limit int) string {
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", "https://html.duckduckgo.com/html/", nil)
 	if err != nil {
@@ -53,7 +55,7 @@ func (s *MarketResearchService) searchDDG(query string) string {
 	q := req.URL.Query()
 	q.Set("q", query)
 	req.URL.RawQuery = q.Encode()
-	req.Header.Set("User-Agent", "OfferHunter/1.0 (job-search-tool)")
+	req.Header.Set("User-Agent", "OfferHunter/2.0 (career-tool)")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -61,12 +63,12 @@ func (s *MarketResearchService) searchDDG(query string) string {
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	return extractSnippets(string(body))
+	return extractSnippets(string(body), limit)
 }
 
 var snippetRe = regexp.MustCompile(`class="result__snippet"[^>]*>(.*?)</a>`)
 
-func extractSnippets(html string) string {
+func extractSnippets(html string, limit int) string {
 	snippets := snippetRe.FindAllStringSubmatch(html, -1)
 
 	var lines []string
@@ -74,7 +76,7 @@ func extractSnippets(html string) string {
 		text := stripHTMLTags(s[1])
 		if len(text) > 20 {
 			lines = append(lines, fmt.Sprintf("%d. %s", len(lines)+1, text))
-			if len(lines) >= 5 {
+			if len(lines) >= limit {
 				break
 			}
 		}

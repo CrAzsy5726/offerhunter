@@ -55,9 +55,11 @@ func ClassifyIntent(ctx context.Context, message string) (string, string) {
 }
 
 // intentToolNames maps an intent to the tool names it is allowed to call.
-// interview/strategy/pivot/salary are populated in later phases.
 var intentToolNames = map[string][]string{
-	"match": {"parse_resume", "parse_jd", "analyze_match", "research_market"},
-	"other": {"research_market"},
-	// TODO(phase 2): interview, strategy, pivot, salary
+	"match":     {"parse_resume", "parse_jd", "analyze_match", "research_market"},
+	"interview": {"generate_interview_questions", "research_market"},
+	"strategy":  {"search_job_listings", "generate_job_search_plan", "research_market"},
+	"pivot":     {"analyze_skill_transferability", "recommend_transition_roles", "research_market"},
+	"salary":    {"get_salary_benchmark", "generate_negotiation_strategy", "research_market"},
+	"other":     {"research_market"},
 }
