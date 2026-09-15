@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/sashabaranov/go-openai"
 
@@ -78,12 +79,15 @@ func (a *Agent) Run(ctx context.Context, message, threadID, intent string, sink 
 			name := tc.Function.Name
 			args := parseArgs(tc.Function.Arguments)
 
+			log.Printf("[agent] tool call: %s args=%v", name, args)
+
 			if sink != nil {
 				sink.ToolStart(name, args)
 			}
 
 			result, execErr := a.execTool(ctx, name, args, st)
 			if execErr != nil {
+				log.Printf("[agent] tool %s error: %v", name, execErr)
 				result = "工具执行失败: " + execErr.Error()
 			}
 
