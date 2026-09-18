@@ -760,10 +760,10 @@ function handleSSEEvent(event, dataStr) {
       // 删除所有流式气泡（match 模式不该有）
       messages = messages.filter(m => !m._streaming);
       renderMessages();
-      // 聊天淡出 + 报告淡入（先渲染，不等市场数据）
+      // 聊天隐藏 + 报告淡入（先渲染，不等市场数据）
       const chatEl = document.getElementById('chat-container');
       const reportEl = document.getElementById('report-container');
-      if (chatEl) chatEl.classList.add('fade-out');
+      if (chatEl) chatEl.style.display = 'none';
       reportEl.style.display = 'block';
       _hasSeenReport = false;
       cachedMarketInfo = null;
@@ -791,7 +791,7 @@ function handleSSEEvent(event, dataStr) {
       renderMessages();
       const chatEl2 = document.getElementById('chat-container');
       const ivEl = document.getElementById('interview-container');
-      if (chatEl2) chatEl2.classList.add('fade-out');
+      if (chatEl2) chatEl2.style.display = 'none';
       ivEl.style.display = 'block';
       renderInterview();
       requestAnimationFrame(() => ivEl.classList.add('show'));
@@ -1318,12 +1318,9 @@ function backToChat() {
   const reportEl = document.getElementById('report-container');
   const chatEl = document.getElementById('chat-container');
   reportEl.classList.remove('show');
-  setTimeout(() => {
-    reportEl.style.display = 'none';
-    reportEl.innerHTML = '';
-  }, 350);
+  reportEl.style.display = 'none';
+  reportEl.innerHTML = '';
   chatEl.style.display = 'block';
-  requestAnimationFrame(() => chatEl.classList.remove('fade-out'));
   document.getElementById('report-banner').style.display = 'flex';
   window._reportIncoming = false;
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1337,7 +1334,7 @@ function viewReport() {
   if (!currentReport) return;
   const chatEl = document.getElementById('chat-container');
   const reportEl = document.getElementById('report-container');
-  chatEl.classList.add('fade-out');
+  chatEl.style.display = 'none';
   reportEl.style.display = 'block';
   window._reportIncoming = true;
   // 直接用缓存的 marketInfo，秒开
@@ -1380,7 +1377,6 @@ function renderInterview() {
         <span class="badge" style="color:${diffColor};border-color:${diffColor}33;background:${diffColor}15;">${q.difficulty || '中等'}</span>
       </div>
       <p class="iv-q-text">${q.question}</p>
-      ${(q.scoring_points && q.scoring_points.length) ? `<div class="iv-scoring-points">📋 评分要点<ul>${q.scoring_points.map(p => `<li>${p}</li>`).join('')}</ul></div>` : ''}
     </div>
 
     <div class="iv-card iv-answer">
@@ -1388,7 +1384,7 @@ function renderInterview() {
       ${grade ? '' : `<button class="iv-submit" id="iv-submit-btn" onclick="submitAnswer()">提交回答</button>`}
     </div>
 
-    ${grade ? renderGradeFeedback(grade) : ''}
+    ${grade ? renderGradeFeedback(grade, q) : ''}
 
     <div class="iv-nav">
       <button onclick="prevQuestion()" ${interviewIndex === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>← 上一题</button>
@@ -1398,8 +1394,14 @@ function renderInterview() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function renderGradeFeedback(grade) {
+function renderGradeFeedback(grade, q) {
   const scoreColor = grade.score >= 8 ? 'var(--success)' : grade.score >= 6 ? 'var(--warning)' : 'var(--error)';
+  const points = (q && q.scoring_points && q.scoring_points.length)
+    ? `<div class="iv-fb-section">
+        <div class="iv-fb-label">📋 评分要点</div>
+        <div class="iv-fb-text"><ul style="margin-left:1.2rem;">${q.scoring_points.map(p => `<li>${p}</li>`).join('')}</ul></div>
+      </div>`
+    : '';
   return `<div class="iv-feedback">
     <div style="display:flex;align-items:center;gap:1rem;">
       <span class="iv-score-big" style="color:${scoreColor};">${grade.score}</span>
@@ -1413,6 +1415,7 @@ function renderGradeFeedback(grade) {
       <div class="iv-fb-label">📖 参考答案要点</div>
       <div class="iv-fb-text">${grade.reference_answer || '—'}</div>
     </div>
+    ${points}
   </div>`;
 }
 
@@ -1489,12 +1492,9 @@ function exitInterview() {
   const ivEl = document.getElementById('interview-container');
   const chatEl = document.getElementById('chat-container');
   ivEl.classList.remove('show');
-  setTimeout(() => {
-    ivEl.style.display = 'none';
-    ivEl.innerHTML = '';
-  }, 200);
+  ivEl.style.display = 'none';
+  ivEl.innerHTML = '';
   chatEl.style.display = 'block';
-  requestAnimationFrame(() => chatEl.classList.remove('fade-out'));
   window._reportIncoming = false;
   window.scrollTo({top:0,behavior:'smooth'});
   addMessage('assistant', '🎤 模拟面试已结束。你可以继续问我其他求职问题，比如：<br>• 📋 制定求职策略<br>• 🔄 规划职业转型<br>• 💰 薪资谈判指导');

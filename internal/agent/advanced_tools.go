@@ -243,6 +243,15 @@ const interviewQuestionsPrompt = `你是一个资深技术面试官。请根据�
 func execGenerateInterviewQuestions(ctx context.Context, args map[string]string, st *ThreadState) (string, error) {
 	jdText := args["jd_text"]
 	resumeText := args["resume_text"]
+
+	// Fall back to the parsed resume/JD stored on the thread state, so the
+	// questions are grounded in what the user actually uploaded/pasted.
+	if jdText == "" {
+		jdText = st.jobText
+	}
+	if resumeText == "" {
+		resumeText = st.resumeText
+	}
 	if jdText == "" {
 		jdText = "（未提供岗位JD，请生成通用技术岗位面试题）"
 	}
