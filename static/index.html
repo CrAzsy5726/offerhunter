@@ -519,11 +519,17 @@ let interviewPrepFile = null;   // 准备页上传的简历文件
 let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
 let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
 let interviewPrepOcrLoading = false; // 面试准备页简历 OCR 是否进行中
+let interviewPrepJDText = '';    // 面试准备页 JD 文本
 
 let matchPrepActive = false;     // 是否处于匹配分析准备页
 let matchPrepFile = null;        // 匹配准备页上传的简历文件
 let matchPrepResumeText = '';    // 匹配准备页简历文本
 let matchPrepOcrLoading = false; // 匹配准备页简历 OCR 是否进行中
+let matchPrepJDText = '';        // 匹配准备页 JD 文本
+
+// 会话级共享材料：最近一次成功提交的简历/JD，供 match 与 interview 双向复用
+let sharedResumeText = '';
+let sharedJDText = '';
 
 // ===== 消息系统 =====
 function addMessage(type, content) {
@@ -1371,10 +1377,14 @@ function resetApp() {
   matchPrepFile = null;
   matchPrepResumeText = '';
   matchPrepOcrLoading = false;
+  matchPrepJDText = '';
   interviewPrepActive = false;
   interviewPrepFile = null;
   interviewPrepResumeText = '';
   interviewPrepOcrLoading = false;
+  interviewPrepJDText = '';
+  sharedResumeText = '';
+  sharedJDText = '';
   document.getElementById('user-input').value = '';
   hideToolStatus();
   document.getElementById('report-banner').style.display = 'none';
@@ -1423,7 +1433,8 @@ function enterMatchPrep() {
   const reportEl = document.getElementById('report-container');
   const ivEl = document.getElementById('interview-container');
   matchPrepFile = null;
-  matchPrepResumeText = '';
+  matchPrepResumeText = sharedResumeText;
+  matchPrepJDText = sharedJDText;
   matchPrepActive = true;
   matchPrepOcrLoading = false;
   chatEl.style.display = 'none';
@@ -1441,6 +1452,7 @@ function renderMatchPrep(container) {
       <div class="iv-title">📄 简历匹配分析</div>
       <button class="iv-exit" onclick="exitMatchPrep()">✕ 退出</button>
     </div>
+    ${(sharedResumeText || sharedJDText) ? `<div class="iv-prep-hint" style="margin-bottom:0.6rem;color:var(--primary);">✓ 已带入上次的简历/JD，可直接修改</div>` : ''}
 
     <div class="iv-card iv-prep-section">
       <div class="iv-prep-label">📄 上传简历（可选）</div>
@@ -1454,7 +1466,7 @@ function renderMatchPrep(container) {
 
     <div class="iv-card iv-prep-section">
       <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
-      <textarea id="match-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;"></textarea>
+      <textarea id="match-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepJDText}</textarea>
     </div>
 
     <button class="iv-submit" onclick="startMatch(this)">开始分析</button>
@@ -1522,6 +1534,8 @@ async function startMatch(btn) {
     if (!resp.ok) throw new Error(data.detail || '分析失败');
 
     matchPrepActive = false;
+    sharedResumeText = resumeText;
+    sharedJDText = jdText;
     currentReport = data.report;
     _hasSeenReport = false;
     cachedMarketInfo = null;
@@ -1554,7 +1568,8 @@ function enterInterviewPrep() {
   const chatEl = document.getElementById('chat-container');
   const ivEl = document.getElementById('interview-container');
   interviewPrepFile = null;
-  interviewPrepResumeText = '';
+  interviewPrepResumeText = sharedResumeText;
+  interviewPrepJDText = sharedJDText;
   interviewPrepActive = true;
   interviewPrepOcrLoading = false;
   chatEl.style.display = 'none';
@@ -1571,6 +1586,7 @@ function renderInterviewPrep(container) {
       <div class="iv-title">🎤 模拟面试</div>
       <button class="iv-exit" onclick="exitInterview()">✕ 退出</button>
     </div>
+    ${(sharedResumeText || sharedJDText) ? `<div class="iv-prep-hint" style="margin-bottom:0.6rem;color:var(--primary);">✓ 已带入上次的简历/JD，可直接修改</div>` : ''}
 
     <div class="iv-card iv-prep-section">
       <div class="iv-prep-label">📄 上传简历（可选）</div>
@@ -1584,7 +1600,7 @@ function renderInterviewPrep(container) {
 
     <div class="iv-card iv-prep-section">
       <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
-      <textarea id="iv-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;"></textarea>
+      <textarea id="iv-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepJDText}</textarea>
     </div>
 
     <button class="iv-submit" onclick="startInterviewWithMaterials(this)">开始面试</button>
@@ -1648,6 +1664,8 @@ async function startInterviewWithMaterials(btn) {
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.detail || '生成失败');
 
+    sharedResumeText = resumeText;
+    sharedJDText = jdText;
     interviewQuestions = data.questions || [];
     interviewIndex = 0;
     interviewAnswers = {};
