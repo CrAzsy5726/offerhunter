@@ -252,11 +252,8 @@ func execGenerateInterviewQuestions(ctx context.Context, args map[string]string,
 	if resumeText == "" {
 		resumeText = st.resumeText
 	}
-	if jdText == "" {
-		jdText = "（未提供岗位JD，请生成通用技术岗位面试题）"
-	}
-	if resumeText == "" {
-		resumeText = "（未提供简历，请生成通用面试题）"
+	if jdText == "" && resumeText == "" {
+		return "需要至少提供JD或简历中的一项来生成面试题。请询问用户提供面试岗位信息或背景。", nil
 	}
 
 	count := 8

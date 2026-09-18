@@ -25,14 +25,11 @@ var intentLabels = map[string]string{
 // misread the request when it sits at the end of a long message (resume+JD
 // pasted before "帮我分析"), so we check the message tail for obvious
 // intent phrases first.
-func keywordIntent(message string) (string, bool) {
-	// Highest-priority: resume + JD both present → match. The user pasted
-	// both and hit enter without an explicit "分析"; this is the clearest
-	// signal and must win over any incidental word in the JD (e.g. "薪资范围").
-	if hasResumeAndJD(message) {
-		return "match", true
-	}
-
+//
+// prevIntent is the intent of the previous turn in the same conversation, used
+// to continue an in-progress flow (e.g. interview) when the user follows up
+// with bare resume+JD and no explicit instruction.
+func keywordIntent(message, prevIntent string) (string, bool) {
 	r := []rune(strings.ToLower(message))
 	if len(r) > 120 {
 		r = r[len(r)-120:]
@@ -48,18 +45,30 @@ func keywordIntent(message string) (string, bool) {
 		return false
 	}
 
+	// 1. Explicit intent phrases win over everything (user stated a goal).
 	switch {
 	case has("转行", "转型", "换方向", "跨领域", "换岗", "转岗"):
 		return "pivot", true
 	case has("模拟面试", "面试练习", "面试题", "出题", "面试一下", "准备面试"):
 		return "interview", true
-	case has("薪资", "薪酬", "工资", "谈薪", "报价", "offer"):
+	case hasSalaryIntent(tail):
 		return "salary", true
 	case has("找工作", "求职计划", "求职策略", "求职规划", "求职"):
 		return "strategy", true
 	case has("分析", "匹配", "合适", "测评", "匹配度"):
 		return "match", true
 	}
+
+	// 2. No explicit intent, but both resume and JD are present.
+	if hasResumeAndJD(message) {
+		// Continue an in-progress interview flow (the system just asked for
+		// resume/JD); otherwise treat bare resume+JD as a cold-start match.
+		if prevIntent == "interview" {
+			return "interview", true
+		}
+		return "match", true
+	}
+
 	return "", false
 }
 
@@ -77,6 +86,23 @@ var resumeSignals = []string{
 	"实习经验", "工作经历", "自我评价", "个人简介", "专业技能",
 	"个人技能", "学校", "学历", "毕业院校", "主修", "所学专业",
 	"应届", "在校", "校园", "获奖", "求职意向", "期望岗位",
+}
+
+// hasSalaryIntent reports whether the message expresses a salary query,
+// excluding JD descriptive phrases like "薪资范围"/"薪资待遇" that would
+// otherwise be mistaken for a user asking about salary.
+func hasSalaryIntent(s string) bool {
+	for _, w := range []string{"薪资范围", "薪资待遇", "薪资福利", "薪资面议"} {
+		if strings.Contains(s, w) {
+			return false
+		}
+	}
+	for _, w := range []string{"薪资", "工资", "谈薪", "报价", "offer"} {
+		if strings.Contains(s, w) {
+			return true
+		}
+	}
+	return false
 }
 
 // hasResumeAndJD reports whether the message contains both resume-ish and
@@ -104,14 +130,15 @@ func hasResumeAndJD(msg string) bool {
 }
 
 // ClassifyIntent returns the intent key and its Chinese label.
-func ClassifyIntent(ctx context.Context, message string) (string, string) {
+// prevIntent is the previous turn's intent, used to continue in-progress flows.
+func ClassifyIntent(ctx context.Context, message, prevIntent string) (string, string) {
 	preview := message
 	if len([]rune(preview)) > 120 {
 		preview = string([]rune(preview)[:120])
 	}
-	log.Printf("[intent] msg preview: %q", preview)
+	log.Printf("[intent] msg preview: %q, prevIntent: %q", preview, prevIntent)
 
-	if intent, ok := keywordIntent(message); ok {
+	if intent, ok := keywordIntent(message, prevIntent); ok {
 		log.Printf("[intent] keyword hit: %s", intent)
 		return intent, intentLabels[intent]
 	}

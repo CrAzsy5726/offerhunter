@@ -44,7 +44,9 @@ func Chat(c *gin.Context) {
 	ctx := c.Request.Context()
 	sink := &sseSink{w: c.Writer}
 
-	intent, intentName := agent.ClassifyIntent(ctx, req.Message)
+	prevIntent := globalAgent.LastIntent(threadID)
+	intent, intentName := agent.ClassifyIntent(ctx, req.Message, prevIntent)
+	globalAgent.RecordIntent(threadID, intent)
 	writeSSE(c.Writer, "intent", map[string]string{"intent": intent, "name": intentName})
 
 	if err := globalAgent.Run(ctx, req.Message, threadID, intent, sink); err != nil {
