@@ -977,7 +977,7 @@ function resetCollectedInfo() { /* deprecated */ }
 
 // ===== 文件解析 =====
 async function parsePDF(file, signal) {
-  addMessage('assistant', '⏳ 正在渲染 PDF 页面...');
+  showToolStatus('⏳ 正在渲染 PDF 页面...');
   await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.min.mjs');
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   // Set worker path for pdf.js v5
@@ -995,7 +995,7 @@ async function parsePDF(file, signal) {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     images.push(canvas.toDataURL('image/jpeg', 0.85));
   }
-  addMessage('assistant', `⏳ PDF 渲染完成（${pdf.numPages} 页），正在识别文字...`);
+  showToolStatus(`⏳ PDF 渲染完成（${pdf.numPages} 页），正在识别文字...`);
   const resp = await fetch('/api/resume/upload', {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images }), signal
   });
