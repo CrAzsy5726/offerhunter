@@ -33,6 +33,7 @@ func NewRouter() *gin.Engine {
 		api.POST("/intent/check", handlers.IntentCheck)
 		api.POST("/export", handlers.Export)
 		api.POST("/interview/grade", handlers.InterviewGrade)
+		api.POST("/interview/generate", handlers.InterviewGenerate)
 	}
 
 	return r

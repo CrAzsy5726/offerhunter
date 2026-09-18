@@ -35,3 +35,30 @@ func InterviewGrade(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
+
+type interviewGenerateRequest struct {
+	ThreadID   string `json:"thread_id"`
+	ResumeText string `json:"resume_text"`
+	JDText     string `json:"jd_text"`
+}
+
+// InterviewGenerate handles POST /api/interview/generate.
+func InterviewGenerate(c *gin.Context) {
+	var req interviewGenerateRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"detail": err.Error()})
+		return
+	}
+
+	threadID := req.ThreadID
+	if threadID == "" {
+		threadID = newThreadID()
+	}
+
+	questions, err := globalAgent.GenerateInterview(c.Request.Context(), threadID, req.ResumeText, req.JDText)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"detail": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"questions": questions})
+}

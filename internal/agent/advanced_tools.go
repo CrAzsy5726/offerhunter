@@ -263,17 +263,27 @@ func execGenerateInterviewQuestions(ctx context.Context, args map[string]string,
 		}
 	}
 
+	questions, raw, err := generateQuestions(ctx, jdText, resumeText, count)
+	if err != nil {
+		return "", err
+	}
+	st.interviewQuestions = questions
+	return raw, nil
+}
+
+// generateQuestions builds an interview-questions prompt, calls the tool LLM,
+// and parses the response into structured InterviewQuestion objects.
+// Returns the questions, the raw normalized text, and any error.
+func generateQuestions(ctx context.Context, jdText, resumeText string, count int) ([]models.InterviewQuestion, string, error) {
 	prompt := strings.ReplaceAll(interviewQuestionsPrompt, "{count}", itoa(count))
 	prompt = strings.ReplaceAll(prompt, "{jd_text}", truncateRunes(jdText, 3000))
 	prompt = strings.ReplaceAll(prompt, "{resume_text}", truncateRunes(resumeText, 3000))
 
 	content, err := toolLLMCall(ctx, prompt)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
-	// Parse structured questions for the interview UI, storing them on the
-	// thread state so loop.go can push an "interview" SSE event.
 	cleaned := strings.TrimSpace(content)
 	for _, prefix := range []string{"```json", "```JSON", "```"} {
 		if strings.HasPrefix(cleaned, prefix) {
@@ -286,11 +296,11 @@ func execGenerateInterviewQuestions(ctx context.Context, args map[string]string,
 	cleaned = strings.TrimSpace(cleaned)
 
 	var questions []models.InterviewQuestion
-	if err := json.Unmarshal([]byte(cleaned), &questions); err == nil && len(questions) > 0 {
-		st.interviewQuestions = questions
+	if err := json.Unmarshal([]byte(cleaned), &questions); err != nil || len(questions) == 0 {
+		return nil, "", errors.New("failed to parse interview questions")
 	}
 
-	return normalizeJSON(content), nil
+	return questions, normalizeJSON(content), nil
 }
 
 const searchListingsPrompt = `请将以下招聘信息搜索结果提炼为结构化的岗位列表。

@@ -331,9 +331,16 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 
 /* 面试界面 */
 .interview-wrap { max-width: 760px; margin: 0 auto; }
-.iv-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-.iv-header .iv-title { font-size: 1.2rem; font-weight: 700; }
-.iv-header .iv-count { font-size: 0.85rem; color: var(--text-secondary); }
+.iv-header { display: flex; align-items: center; margin-bottom: 0.75rem; }
+.iv-header .iv-title { font-size: 1.2rem; font-weight: 700; margin-right: auto; }
+.iv-header .iv-count { font-size: 0.85rem; color: var(--text-secondary); margin-right: 1rem; }
+.iv-header .iv-exit {
+  padding: 0.3rem 0.8rem; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card-bg);
+  color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.iv-header .iv-exit:hover { color: var(--error); border-color: var(--error); background: rgba(248,113,113,0.08); }
 .iv-progress { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 1.2rem; }
 .iv-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 999px; transition: width 0.3s ease; }
 .iv-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
@@ -356,6 +363,13 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .iv-nav button:hover { border-color: var(--primary); background: var(--primary-glow); }
 .iv-nav .iv-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border: none; }
 .iv-summary { text-align: center; padding: 2rem 1rem; }
+.iv-prep-section { margin-bottom: 1.2rem; }
+.iv-prep-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
+.iv-prep-file { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; font-size: 0.85rem; color: var(--text-secondary); }
+.iv-prep-file.has-file { border-style: solid; border-color: var(--primary); color: var(--text); }
+.iv-prep-file button { margin-left: auto; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
+.iv-prep-file button:hover { color: var(--error); }
+.iv-prep-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem; }
 .iv-summary .iv-avg { font-size: 3rem; font-weight: 800; }
 .iv-summary-list { max-width: 600px; margin: 1rem auto 0; text-align: left; }
 .iv-summary-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
@@ -501,6 +515,8 @@ let interviewIndex = 0;
 let interviewAnswers = {};   // { index: answer }
 let interviewGrades = {};    // { index: {score, comment, reference_answer} }
 let interviewDone = false;
+let interviewPrepFile = null;   // 准备页上传的简历文件
+let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
 
 // ===== 消息系统 =====
 function addMessage(type, content) {
@@ -602,14 +618,17 @@ function handleKeyDown(e) {
 }
 
 function quickStart(mode) {
+  if (isAnalyzing) return;
+  if (mode === 'interview') {
+    enterInterviewPrep();
+    return;
+  }
   const triggers = {
     match: '你好，我想做简历和JD的匹配分析',
-    interview: '帮我模拟面试',
     strategy: '帮我制定求职策略，找找工作',
     pivot: '我想规划一下职业转型',
     salary: '帮我查一下薪资水平',
   };
-  if (isAnalyzing) return;
   addMessage('user', triggers[mode]);
   scrollToBottom();
   sendChatMessage(triggers[mode]);
@@ -780,6 +799,7 @@ function handleSSEEvent(event, dataStr) {
       hideToolStatus();
       if (!data.questions || !data.questions.length) break;
       window._reportIncoming = true;
+      window._interviewExited = false;
       interviewQuestions = data.questions;
       interviewIndex = 0;
       interviewAnswers = {};
@@ -1305,6 +1325,7 @@ function resetApp() {
   interviewAnswers = {};
   interviewGrades = {};
   interviewDone = false;
+  window._interviewExited = false;
   document.getElementById('user-input').value = '';
   hideToolStatus();
   document.getElementById('report-banner').style.display = 'none';
@@ -1348,6 +1369,106 @@ function dismissBanner() {
 }
 
 // ===== 模拟面试界面 =====
+function enterInterviewPrep() {
+  const chatEl = document.getElementById('chat-container');
+  const ivEl = document.getElementById('interview-container');
+  interviewPrepFile = null;
+  interviewPrepResumeText = '';
+  chatEl.style.display = 'none';
+  ivEl.style.display = 'block';
+  ivEl.classList.remove('show');
+  renderInterviewPrep(ivEl);
+  requestAnimationFrame(() => ivEl.classList.add('show'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderInterviewPrep(container) {
+  container.innerHTML = `<div class="interview-wrap">
+    <div class="iv-header">
+      <div class="iv-title">🎤 模拟面试</div>
+      <button class="iv-exit" onclick="exitInterview()">✕ 退出</button>
+    </div>
+
+    <div class="iv-card iv-prep-section">
+      <div class="iv-prep-label">📄 上传简历（可选）</div>
+      <div class="iv-prep-file ${interviewPrepFile ? 'has-file' : ''}" id="iv-prep-file">
+        ${interviewPrepFile ? `📎 ${interviewPrepFile.name}` : '点击上传 PDF / 图片简历'}
+        <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="iv-prep-file-input" onchange="handleInterviewFile(event)">
+      </div>
+      <div class="iv-prep-hint">也可在下方文本框直接粘贴简历文本</div>
+      <textarea id="iv-prep-resume" placeholder="或粘贴简历文本..." style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepResumeText}</textarea>
+    </div>
+
+    <div class="iv-card iv-prep-section">
+      <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
+      <textarea id="iv-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;"></textarea>
+    </div>
+
+    <button class="iv-submit" onclick="startInterviewWithMaterials(this)">开始面试</button>
+  </div>`;
+
+  // 绑定文件点击
+  const fileBox = document.getElementById('iv-prep-file');
+  if (fileBox) {
+    fileBox.style.cursor = 'pointer';
+    fileBox.onclick = () => document.getElementById('iv-prep-file-input').click();
+  }
+}
+
+async function handleInterviewFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  interviewPrepFile = file;
+  // 重新渲染以显示文件名
+  renderInterviewPrep(document.getElementById('interview-container'));
+  // OCR 解析
+  const container = document.getElementById('interview-container');
+  showToolStatus('⏳ 正在识别简历文字...');
+  try {
+    let text;
+    if (file.type === 'application/pdf') text = await parsePDF(file);
+    else if (file.type.startsWith('image/')) text = await parseImage(file);
+    else text = await file.text();
+    interviewPrepResumeText = text;
+    const ta = document.getElementById('iv-prep-resume');
+    if (ta) ta.value = text;
+  } catch (err) {
+    showToast('简历识别失败: ' + (err.message || err));
+  } finally {
+    hideToolStatus();
+  }
+}
+
+async function startInterviewWithMaterials(btn) {
+  const resumeText = (document.getElementById('iv-prep-resume')?.value || '').trim() || interviewPrepResumeText;
+  const jdText = (document.getElementById('iv-prep-jd')?.value || '').trim();
+  if (!resumeText && !jdText) {
+    showToast('请至少上传简历或粘贴 JD');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '生成面试题中...'; }
+
+  try {
+    const resp = await fetch('/api/interview/generate', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ thread_id: threadId, resume_text: resumeText, jd_text: jdText })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '生成失败');
+
+    interviewQuestions = data.questions || [];
+    interviewIndex = 0;
+    interviewAnswers = {};
+    interviewGrades = {};
+    interviewDone = false;
+    renderInterview();
+  } catch (err) {
+    showToast('生成面试题失败: ' + (err.message || err));
+    if (btn) { btn.disabled = false; btn.textContent = '开始面试'; }
+  }
+}
+
 function renderInterview() {
   const container = document.getElementById('interview-container');
   if (interviewDone) {
@@ -1368,6 +1489,7 @@ function renderInterview() {
     <div class="iv-header">
       <div class="iv-title">🎤 模拟面试</div>
       <div class="iv-count">第 ${interviewIndex + 1} / ${total} 题</div>
+      <button class="iv-exit" onclick="exitInterview()">✕ 退出</button>
     </div>
     <div class="iv-progress"><div class="iv-progress-fill" style="width:${progress}%"></div></div>
 
@@ -1497,7 +1619,10 @@ function exitInterview() {
   chatEl.style.display = 'block';
   window._reportIncoming = false;
   window.scrollTo({top:0,behavior:'smooth'});
-  addMessage('assistant', '🎤 模拟面试已结束。你可以继续问我其他求职问题，比如：<br>• 📋 制定求职策略<br>• 🔄 规划职业转型<br>• 💰 薪资谈判指导');
+  if (!window._interviewExited) {
+    window._interviewExited = true;
+    addMessage('assistant', '🎤 已退出模拟面试。你可以继续问我其他求职问题，比如：<br>• 📋 制定求职策略<br>• 🔄 规划职业转型<br>• 💰 薪资谈判指导');
+  }
 }
 
 // ===== 页面初始化 =====
