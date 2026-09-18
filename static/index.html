@@ -507,8 +507,7 @@ let isAnalyzing = false;
 let currentReport = null;
 let cachedMarketInfo = null;
 let _hasSeenReport = false;
-let threadId = localStorage.getItem('oh_thread_id') || crypto.randomUUID();
-localStorage.setItem('oh_thread_id', threadId);
+let threadId = crypto.randomUUID();
 
 // 面试状态
 let interviewQuestions = [];
@@ -873,7 +872,6 @@ function handleSSEEvent(event, dataStr) {
       // 更新 thread_id
       if (data.thread_id) {
         threadId = data.thread_id;
-        localStorage.setItem('oh_thread_id', threadId);
       }
       break;
   }
@@ -1350,7 +1348,6 @@ function resetApp() {
   window._reportIncoming = false;
   window._suppressTokens = false;
   threadId = crypto.randomUUID();
-  localStorage.setItem('oh_thread_id', threadId);
   const chatEl = document.getElementById('chat-container');
   const reportEl = document.getElementById('report-container');
   const ivEl = document.getElementById('interview-container');
