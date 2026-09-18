@@ -15,6 +15,13 @@ func TestKeywordIntent(t *testing.T) {
 		{"帮我查一下薪资", "salary"},
 		{"帮我制定求职计划", "strategy"},
 		{"你好", ""},
+		// resume + JD pasted together, no explicit "分析"
+		{"教育背景：XX大学计算机本科\n项目经历：电商系统\n\n招聘Java工程师，岗位职责：负责后端开发，任职要求：熟悉Java", "match"},
+		{"学校：XX大学 学历：本科 技能：Java\n\n岗位：Java后端 薪资范围：15-25K", "match"},
+		// JD only, no resume
+		{"招聘Java工程师，岗位职责：负责后端开发，任职要求：熟悉Java", ""},
+		// resume only, no JD
+		{"教育背景：XX大学计算机本科，项目经历：电商系统，实习经历：2段", ""},
 	}
 
 	for _, c := range cases {

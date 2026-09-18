@@ -26,6 +26,13 @@ var intentLabels = map[string]string{
 // pasted before "帮我分析"), so we check the message tail for obvious
 // intent phrases first.
 func keywordIntent(message string) (string, bool) {
+	// Highest-priority: resume + JD both present → match. The user pasted
+	// both and hit enter without an explicit "分析"; this is the clearest
+	// signal and must win over any incidental word in the JD (e.g. "薪资范围").
+	if hasResumeAndJD(message) {
+		return "match", true
+	}
+
 	r := []rune(strings.ToLower(message))
 	if len(r) > 120 {
 		r = r[len(r)-120:]
@@ -46,7 +53,7 @@ func keywordIntent(message string) (string, bool) {
 		return "pivot", true
 	case has("模拟面试", "面试练习", "面试题", "出题", "面试一下", "准备面试"):
 		return "interview", true
-	case has("薪资", "薪酬", "谈薪", "谈判", "报价", "offer", "工资"):
+	case has("薪资", "薪酬", "工资", "谈薪", "报价", "offer"):
 		return "salary", true
 	case has("找工作", "求职计划", "求职策略", "求职规划", "求职"):
 		return "strategy", true
@@ -56,8 +63,54 @@ func keywordIntent(message string) (string, bool) {
 	return "", false
 }
 
+// jdSignals are words that almost only appear in a job description.
+var jdSignals = []string{
+	"招聘", "岗位职责", "任职要求", "职位描述", "工作职责",
+	"薪资范围", "薪资待遇", "岗位要求", "职位要求", "岗位描述",
+	"工作内容", "加分项", "优先考虑", "五险一金", "福利待遇",
+	"工程师", "开发工程师", "职责", "任职", "待遇",
+}
+
+// resumeSignals are words that almost only appear in a resume.
+var resumeSignals = []string{
+	"教育背景", "教育经历", "项目经历", "项目经验", "实习经历",
+	"实习经验", "工作经历", "自我评价", "个人简介", "专业技能",
+	"个人技能", "学校", "学历", "毕业院校", "主修", "所学专业",
+	"应届", "在校", "校园", "获奖", "求职意向", "期望岗位",
+}
+
+// hasResumeAndJD reports whether the message contains both resume-ish and
+// JD-ish signals, indicating the user provided both a resume and a JD.
+func hasResumeAndJD(msg string) bool {
+	lower := strings.ToLower(msg)
+
+	hasJD := false
+	for _, s := range jdSignals {
+		if strings.Contains(lower, s) {
+			hasJD = true
+			break
+		}
+	}
+	if !hasJD {
+		return false
+	}
+
+	for _, s := range resumeSignals {
+		if strings.Contains(lower, s) {
+			return true
+		}
+	}
+	return false
+}
+
 // ClassifyIntent returns the intent key and its Chinese label.
 func ClassifyIntent(ctx context.Context, message string) (string, string) {
+	preview := message
+	if len([]rune(preview)) > 120 {
+		preview = string([]rune(preview)[:120])
+	}
+	log.Printf("[intent] msg preview: %q", preview)
+
 	if intent, ok := keywordIntent(message); ok {
 		log.Printf("[intent] keyword hit: %s", intent)
 		return intent, intentLabels[intent]
