@@ -367,6 +367,7 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .iv-prep-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
 .iv-prep-file { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; font-size: 0.85rem; color: var(--text-secondary); }
 .iv-prep-file.has-file { border-style: solid; border-color: var(--primary); color: var(--text); }
+.iv-prep-file.drag-over { border-color: var(--primary); background: var(--primary-glow); border-style: solid; }
 .iv-prep-file button { margin-left: auto; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
 .iv-prep-file button:hover { color: var(--error); }
 .iv-prep-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem; }
@@ -517,6 +518,7 @@ let interviewGrades = {};    // { index: {score, comment, reference_answer} }
 let interviewDone = false;
 let interviewPrepFile = null;   // 准备页上传的简历文件
 let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
+let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
 
 // ===== 消息系统 =====
 function addMessage(type, content) {
@@ -596,12 +598,35 @@ function renderFileTags() {
 
 // ===== 拖拽 =====
 const dropOverlay = document.getElementById('drop-overlay');
-document.addEventListener('dragover', e => { e.preventDefault(); dropOverlay.classList.add('show'); });
-document.addEventListener('dragleave', e => { if(!e.relatedTarget) dropOverlay.classList.remove('show'); });
+document.addEventListener('dragover', e => {
+  e.preventDefault();
+  if (interviewPrepActive) {
+    const box = document.getElementById('iv-prep-file');
+    if (box) box.classList.add('drag-over');
+  } else {
+    dropOverlay.classList.add('show');
+  }
+});
+document.addEventListener('dragleave', e => {
+  if (interviewPrepActive) {
+    const box = document.getElementById('iv-prep-file');
+    if (box && !e.relatedTarget) box.classList.remove('drag-over');
+  } else if (!e.relatedTarget) {
+    dropOverlay.classList.remove('show');
+  }
+});
 document.addEventListener('drop', e => {
-  e.preventDefault(); dropOverlay.classList.remove('show');
+  e.preventDefault();
   const file = e.dataTransfer.files[0];
-  if (file) attachFile(file);
+  if (!file) return;
+  if (interviewPrepActive) {
+    const box = document.getElementById('iv-prep-file');
+    if (box) box.classList.remove('drag-over');
+    processInterviewFile(file);
+  } else {
+    dropOverlay.classList.remove('show');
+    attachFile(file);
+  }
 });
 
 // ===== 粘贴 =====
@@ -1374,6 +1399,7 @@ function enterInterviewPrep() {
   const ivEl = document.getElementById('interview-container');
   interviewPrepFile = null;
   interviewPrepResumeText = '';
+  interviewPrepActive = true;
   chatEl.style.display = 'none';
   ivEl.style.display = 'block';
   ivEl.classList.remove('show');
@@ -1392,7 +1418,7 @@ function renderInterviewPrep(container) {
     <div class="iv-card iv-prep-section">
       <div class="iv-prep-label">📄 上传简历（可选）</div>
       <div class="iv-prep-file ${interviewPrepFile ? 'has-file' : ''}" id="iv-prep-file">
-        ${interviewPrepFile ? `📎 ${interviewPrepFile.name}` : '点击上传 PDF / 图片简历'}
+        ${interviewPrepFile ? `📎 ${interviewPrepFile.name}` : '点击或拖拽上传 PDF / 图片简历'}
         <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="iv-prep-file-input" onchange="handleInterviewFile(event)">
       </div>
       <div class="iv-prep-hint">也可在下方文本框直接粘贴简历文本</div>
@@ -1417,12 +1443,14 @@ function renderInterviewPrep(container) {
 
 async function handleInterviewFile(e) {
   const file = e.target.files && e.target.files[0];
-  if (!file) return;
+  if (file) await processInterviewFile(file);
+}
+
+async function processInterviewFile(file) {
+  const supported = ['application/pdf', 'text/plain', 'image/jpeg', 'image/png', 'image/webp'];
+  if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
   interviewPrepFile = file;
-  // 重新渲染以显示文件名
   renderInterviewPrep(document.getElementById('interview-container'));
-  // OCR 解析
-  const container = document.getElementById('interview-container');
   showToolStatus('⏳ 正在识别简历文字...');
   try {
     let text;
@@ -1462,6 +1490,7 @@ async function startInterviewWithMaterials(btn) {
     interviewAnswers = {};
     interviewGrades = {};
     interviewDone = false;
+    interviewPrepActive = false;
     renderInterview();
   } catch (err) {
     showToast('生成面试题失败: ' + (err.message || err));
@@ -1617,6 +1646,7 @@ function exitInterview() {
   ivEl.style.display = 'none';
   ivEl.innerHTML = '';
   chatEl.style.display = 'block';
+  interviewPrepActive = false;
   window._reportIncoming = false;
   window.scrollTo({top:0,behavior:'smooth'});
   if (!window._interviewExited) {
