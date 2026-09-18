@@ -11,6 +11,7 @@ import (
 
 	"offerhunter/internal/config"
 	"offerhunter/internal/llm"
+	"offerhunter/internal/models"
 	"offerhunter/internal/services"
 )
 
@@ -23,16 +24,17 @@ func intParam(desc string) map[string]any {
 var advancedTools = []Tool{
 	{
 		Name: "generate_interview_questions",
-		Description: "根据JD和简历生成针对性的面试题目。" +
-			"调用时机：用户想要模拟面试时，需要先生成一组面试题。" +
-			"jd_text: 岗位描述原文（如果不确定，就用用户最近提供的JD相关信息，哪怕是简短的也行）" +
-			"resume_text: 简历原文（如果不确定，就用用户最近提供的背景描述，哪怕是简短描述也行）" +
+		Description: "生成模拟面试的面试题目（JSON数组）。" +
+			"调用时机：用户说\"模拟面试\"\"面试一下\"\"准备面试\"时，**必须立即调用此工具**，不要用文字询问或拒绝。" +
+			"即使信息简短（如用户只说\"熟悉Java\"），也要把已知信息作为参数传入，工具会生成通用面试题。" +
+			"jd_text: 岗位描述（没有就传空字符串）" +
+			"resume_text: 简历或背景描述（没有就传空字符串）" +
 			"count: 题目数量，默认8道",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"jd_text":     strParam("岗位描述原文"),
-				"resume_text": strParam("简历原文"),
+				"jd_text":     strParam("岗位描述原文（可空）"),
+				"resume_text": strParam("简历原文或背景（可空）"),
 				"count":       intParam("题目数量，默认8道"),
 			},
 		},
@@ -241,8 +243,11 @@ const interviewQuestionsPrompt = `你是一个资深技术面试官。请根据�
 func execGenerateInterviewQuestions(ctx context.Context, args map[string]string, st *ThreadState) (string, error) {
 	jdText := args["jd_text"]
 	resumeText := args["resume_text"]
-	if jdText == "" && resumeText == "" {
-		return "需要至少提供JD或简历中的一项来生成面试题。请询问用户提供面试岗位信息或背景。", nil
+	if jdText == "" {
+		jdText = "（未提供岗位JD，请生成通用技术岗位面试题）"
+	}
+	if resumeText == "" {
+		resumeText = "（未提供简历，请生成通用面试题）"
 	}
 
 	count := 8
@@ -260,6 +265,25 @@ func execGenerateInterviewQuestions(ctx context.Context, args map[string]string,
 	if err != nil {
 		return "", err
 	}
+
+	// Parse structured questions for the interview UI, storing them on the
+	// thread state so loop.go can push an "interview" SSE event.
+	cleaned := strings.TrimSpace(content)
+	for _, prefix := range []string{"```json", "```JSON", "```"} {
+		if strings.HasPrefix(cleaned, prefix) {
+			cleaned = cleaned[len(prefix):]
+		}
+	}
+	if strings.HasSuffix(cleaned, "```") {
+		cleaned = cleaned[:len(cleaned)-3]
+	}
+	cleaned = strings.TrimSpace(cleaned)
+
+	var questions []models.InterviewQuestion
+	if err := json.Unmarshal([]byte(cleaned), &questions); err == nil && len(questions) > 0 {
+		st.interviewQuestions = questions
+	}
+
 	return normalizeJSON(content), nil
 }
 

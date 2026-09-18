@@ -74,6 +74,10 @@ func (s *sseSink) Report(report *models.MatchReport) {
 	writeSSE(s.w, "report", map[string]any{"report": report})
 }
 
+func (s *sseSink) Interview(questions []models.InterviewQuestion) {
+	writeSSE(s.w, "interview", map[string]any{"questions": questions})
+}
+
 func (s *sseSink) Token(text string) {
 	writeSSE(s.w, "token", map[string]any{"content": text})
 }

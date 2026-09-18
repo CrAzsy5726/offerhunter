@@ -26,6 +26,7 @@ type Sink interface {
 	ToolStart(name string, input map[string]string)
 	ToolEnd(name string, output string)
 	Report(report *models.MatchReport)
+	Interview(questions []models.InterviewQuestion)
 	Token(text string)
 }
 
@@ -45,6 +46,12 @@ func (a *Agent) Run(ctx context.Context, message, threadID, intent string, sink 
 
 	for {
 		tools := filterTools(allowed)
+
+		var toolNames []string
+		for _, t := range tools {
+			toolNames = append(toolNames, t.Function.Name)
+		}
+		log.Printf("[agent] sending tools (intent=%s): %v", intent, toolNames)
 
 		resp, err := llm.DeepSeek().CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 			Model:       config.DeepSeekModel,
@@ -98,6 +105,11 @@ func (a *Agent) Run(ctx context.Context, message, threadID, intent string, sink 
 			// Push report right after analyze_match, before the model talks.
 			if name == "analyze_match" && st.report != nil && sink != nil {
 				sink.Report(st.report)
+			}
+
+			// Push structured interview questions after generation.
+			if name == "generate_interview_questions" && len(st.interviewQuestions) > 0 && sink != nil {
+				sink.Interview(st.interviewQuestions)
 			}
 
 			st.messages = append(st.messages, openai.ChatCompletionMessage{

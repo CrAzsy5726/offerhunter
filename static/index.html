@@ -323,11 +323,43 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 }
 #drop-overlay.show { display: flex; }
 
-/* 报告区 */
+/* 报告区 / 面试区（共用淡入淡出） */
 #chat-container { transition: opacity 0.15s ease, transform 0.15s ease; }
 #chat-container.fade-out { opacity: 0; transform: translateY(-6px); pointer-events: none; }
-#report-container { display: none; width: 100%; padding: 1.5rem; opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
-#report-container.show { opacity: 1; transform: translateY(0); }
+#report-container, #interview-container { display: none; width: 100%; padding: 1.5rem; opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
+#report-container.show, #interview-container.show { opacity: 1; transform: translateY(0); }
+
+/* 面试界面 */
+.interview-wrap { max-width: 760px; margin: 0 auto; }
+.iv-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.iv-header .iv-title { font-size: 1.2rem; font-weight: 700; }
+.iv-header .iv-count { font-size: 0.85rem; color: var(--text-secondary); }
+.iv-progress { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 1.2rem; }
+.iv-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 999px; transition: width 0.3s ease; }
+.iv-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
+.iv-tags { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.iv-q-text { font-size: 1.05rem; line-height: 1.7; color: var(--text); }
+.iv-scoring-points { margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); }
+.iv-scoring-points ul { margin: 0.3rem 0 0 1.2rem; }
+.iv-answer textarea { width: 100%; min-height: 120px; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 0.95rem; line-height: 1.6; resize: vertical; }
+.iv-answer textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+.iv-submit { margin-top: 0.75rem; width: 100%; padding: 0.7rem; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.iv-submit:hover { opacity: 0.9; }
+.iv-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.iv-feedback { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
+.iv-score-big { font-size: 2.2rem; font-weight: 800; }
+.iv-fb-section { margin-top: 0.75rem; }
+.iv-fb-section .iv-fb-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+.iv-fb-section .iv-fb-text { font-size: 0.95rem; line-height: 1.7; }
+.iv-nav { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem; }
+.iv-nav button { padding: 0.6rem 1.2rem; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.iv-nav button:hover { border-color: var(--primary); background: var(--primary-glow); }
+.iv-nav .iv-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border: none; }
+.iv-summary { text-align: center; padding: 2rem 1rem; }
+.iv-summary .iv-avg { font-size: 3rem; font-weight: 800; }
+.iv-summary-list { max-width: 600px; margin: 1rem auto 0; text-align: left; }
+.iv-summary-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
+.iv-summary-item .iv-q-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; background: var(--primary-glow); color: var(--primary); }
 
 @media (max-width: 768px) {
   .header { padding: 0.5rem 0.6rem; }
@@ -424,6 +456,9 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
 
   <!-- 报告区 -->
   <div id="report-container"></div>
+
+  <!-- 面试区 -->
+  <div id="interview-container"></div>
 </div>
 
 <script>
@@ -459,6 +494,13 @@ let cachedMarketInfo = null;
 let _hasSeenReport = false;
 let threadId = localStorage.getItem('oh_thread_id') || crypto.randomUUID();
 localStorage.setItem('oh_thread_id', threadId);
+
+// 面试状态
+let interviewQuestions = [];
+let interviewIndex = 0;
+let interviewAnswers = {};   // { index: answer }
+let interviewGrades = {};    // { index: {score, comment, reference_answer} }
+let interviewDone = false;
 
 // ===== 消息系统 =====
 function addMessage(type, content) {
@@ -732,6 +774,27 @@ function handleSSEEvent(event, dataStr) {
         cachedMarketInfo = mkt;
         injectMarketSection(mkt);
       });
+      break;
+
+    case 'interview':
+      hideToolStatus();
+      if (!data.questions || !data.questions.length) break;
+      window._reportIncoming = true;
+      interviewQuestions = data.questions;
+      interviewIndex = 0;
+      interviewAnswers = {};
+      interviewGrades = {};
+      interviewDone = false;
+      _currentIntent = '';
+      // 删除流式气泡
+      messages = messages.filter(m => !m._streaming);
+      renderMessages();
+      const chatEl2 = document.getElementById('chat-container');
+      const ivEl = document.getElementById('interview-container');
+      if (chatEl2) chatEl2.classList.add('fade-out');
+      ivEl.style.display = 'block';
+      renderInterview();
+      requestAnimationFrame(() => ivEl.classList.add('show'));
       break;
 
     case 'error':
@@ -1228,11 +1291,20 @@ function resetApp() {
   localStorage.setItem('oh_thread_id', threadId);
   const chatEl = document.getElementById('chat-container');
   const reportEl = document.getElementById('report-container');
+  const ivEl = document.getElementById('interview-container');
   chatEl.classList.remove('fade-out');
   chatEl.style.display = 'block';
   reportEl.classList.remove('show');
   reportEl.style.display = 'none';
   reportEl.innerHTML = '';
+  ivEl.classList.remove('show');
+  ivEl.style.display = 'none';
+  ivEl.innerHTML = '';
+  interviewQuestions = [];
+  interviewIndex = 0;
+  interviewAnswers = {};
+  interviewGrades = {};
+  interviewDone = false;
   document.getElementById('user-input').value = '';
   hideToolStatus();
   document.getElementById('report-banner').style.display = 'none';
@@ -1276,6 +1348,156 @@ function viewReport() {
 function dismissBanner() {
   document.getElementById('report-banner').style.display = 'none';
   currentReport = null;
+}
+
+// ===== 模拟面试界面 =====
+function renderInterview() {
+  const container = document.getElementById('interview-container');
+  if (interviewDone) {
+    renderInterviewSummary(container);
+    return;
+  }
+
+  const q = interviewQuestions[interviewIndex];
+  if (!q) { exitInterview(); return; }
+
+  const total = interviewQuestions.length;
+  const progress = ((interviewIndex) / total) * 100;
+  const diffColor = { '简单': 'var(--success)', '中等': 'var(--warning)', '困难': 'var(--error)' }[q.difficulty] || 'var(--text-secondary)';
+  const savedAnswer = interviewAnswers[interviewIndex] || '';
+  const grade = interviewGrades[interviewIndex];
+
+  container.innerHTML = `<div class="interview-wrap">
+    <div class="iv-header">
+      <div class="iv-title">🎤 模拟面试</div>
+      <div class="iv-count">第 ${interviewIndex + 1} / ${total} 题</div>
+    </div>
+    <div class="iv-progress"><div class="iv-progress-fill" style="width:${progress}%"></div></div>
+
+    <div class="iv-card">
+      <div class="iv-tags">
+        <span class="badge badge-info">${q.category || '综合'}</span>
+        <span class="badge" style="color:${diffColor};border-color:${diffColor}33;background:${diffColor}15;">${q.difficulty || '中等'}</span>
+      </div>
+      <p class="iv-q-text">${q.question}</p>
+      ${(q.scoring_points && q.scoring_points.length) ? `<div class="iv-scoring-points">📋 评分要点<ul>${q.scoring_points.map(p => `<li>${p}</li>`).join('')}</ul></div>` : ''}
+    </div>
+
+    <div class="iv-card iv-answer">
+      <textarea id="iv-answer-input" placeholder="输入你的回答..." ${grade ? 'disabled' : ''}>${savedAnswer}</textarea>
+      ${grade ? '' : `<button class="iv-submit" id="iv-submit-btn" onclick="submitAnswer()">提交回答</button>`}
+    </div>
+
+    ${grade ? renderGradeFeedback(grade) : ''}
+
+    <div class="iv-nav">
+      <button onclick="prevQuestion()" ${interviewIndex === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>← 上一题</button>
+      ${interviewIndex < total - 1 ? `<button class="iv-primary" onclick="nextQuestion()">下一题 →</button>` : `<button class="iv-primary" onclick="finishInterview()">结束面试</button>`}
+    </div>
+  </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderGradeFeedback(grade) {
+  const scoreColor = grade.score >= 8 ? 'var(--success)' : grade.score >= 6 ? 'var(--warning)' : 'var(--error)';
+  return `<div class="iv-feedback">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <span class="iv-score-big" style="color:${scoreColor};">${grade.score}</span>
+      <span style="color:var(--text-secondary);">/ 10 分</span>
+    </div>
+    <div class="iv-fb-section">
+      <div class="iv-fb-label">💬 面试官点评</div>
+      <div class="iv-fb-text">${grade.comment || '—'}</div>
+    </div>
+    <div class="iv-fb-section">
+      <div class="iv-fb-label">📖 参考答案要点</div>
+      <div class="iv-fb-text">${grade.reference_answer || '—'}</div>
+    </div>
+  </div>`;
+}
+
+async function submitAnswer() {
+  const input = document.getElementById('iv-answer-input');
+  const answer = input.value.trim();
+  if (!answer) { showToast('请先输入你的回答'); return; }
+
+  const q = interviewQuestions[interviewIndex];
+  const btn = document.getElementById('iv-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '评分中...'; }
+
+  try {
+    const resp = await fetch('/api/interview/grade', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ question: q, answer })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '评分失败');
+    interviewAnswers[interviewIndex] = answer;
+    interviewGrades[interviewIndex] = data.result;
+    renderInterview();
+  } catch (err) {
+    showToast('评分失败: ' + (err.message || err));
+    if (btn) { btn.disabled = false; btn.textContent = '提交回答'; }
+  }
+}
+
+function prevQuestion() {
+  if (interviewIndex > 0) { interviewIndex--; renderInterview(); }
+}
+
+function nextQuestion() {
+  if (interviewIndex < interviewQuestions.length - 1) { interviewIndex++; renderInterview(); }
+}
+
+function finishInterview() {
+  interviewDone = true;
+  renderInterview();
+}
+
+function renderInterviewSummary(container) {
+  const total = interviewQuestions.length;
+  const graded = Object.keys(interviewGrades).map(k => ({ idx: Number(k), ...interviewGrades[k] }));
+  const avg = graded.length ? (graded.reduce((s, g) => s + g.score, 0) / graded.length) : 0;
+  const avgColor = avg >= 8 ? 'var(--success)' : avg >= 6 ? 'var(--warning)' : 'var(--error)';
+
+  const rows = interviewQuestions.map((q, i) => {
+    const g = interviewGrades[i];
+    return `<div class="iv-summary-item">
+      <div class="iv-q-num">${i + 1}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.85rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.question}</div>
+      </div>
+      ${g ? `<div style="font-weight:700;color:${g.score >= 8 ? 'var(--success)' : g.score >= 6 ? 'var(--warning)' : 'var(--error)'};">${g.score}分</div>` : `<div style="font-size:0.8rem;color:var(--text-secondary);">未答</div>`}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="interview-wrap iv-summary">
+    <div style="font-size:2rem;margin-bottom:0.5rem;">🎉</div>
+    <h2 style="margin-bottom:0.5rem;">模拟面试完成</h2>
+    <p style="color:var(--text-secondary);margin-bottom:1.5rem;">共 ${total} 题，已作答 ${graded.length} 题</p>
+    <div class="iv-avg" style="color:${avgColor};">${avg ? avg.toFixed(1) : '—'}</div>
+    <p style="color:var(--text-secondary);">平均得分</p>
+    <div class="iv-summary-list">${rows}</div>
+    <div class="iv-nav" style="margin-top:1.5rem;">
+      <button class="iv-primary" onclick="exitInterview()">💬 回到对话</button>
+    </div>
+  </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function exitInterview() {
+  const ivEl = document.getElementById('interview-container');
+  const chatEl = document.getElementById('chat-container');
+  ivEl.classList.remove('show');
+  setTimeout(() => {
+    ivEl.style.display = 'none';
+    ivEl.innerHTML = '';
+  }, 200);
+  chatEl.style.display = 'block';
+  requestAnimationFrame(() => chatEl.classList.remove('fade-out'));
+  window._reportIncoming = false;
+  window.scrollTo({top:0,behavior:'smooth'});
+  addMessage('assistant', '🎤 模拟面试已结束。你可以继续问我其他求职问题，比如：<br>• 📋 制定求职策略<br>• 🔄 规划职业转型<br>• 💰 薪资谈判指导');
 }
 
 // ===== 页面初始化 =====

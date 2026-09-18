@@ -151,3 +151,20 @@ type MarketInfo struct {
 	Competition string   `json:"competition"`
 	Summary     string   `json:"summary"`
 }
+
+// ── Interview ──
+
+type InterviewQuestion struct {
+	ID                  int      `json:"id"`
+	Category            string   `json:"category"`
+	Difficulty          string   `json:"difficulty"`
+	Question            string   `json:"question"`
+	ScoringPoints       []string `json:"scoring_points"`
+	ReferenceAnswerHint string   `json:"reference_answer_hint"`
+}
+
+type InterviewGradeResult struct {
+	Score           int    `json:"score"`
+	Comment         string `json:"comment"`
+	ReferenceAnswer string `json:"reference_answer"`
+}

@@ -32,6 +32,7 @@ func NewRouter() *gin.Engine {
 		api.POST("/market", handlers.Market)
 		api.POST("/intent/check", handlers.IntentCheck)
 		api.POST("/export", handlers.Export)
+		api.POST("/interview/grade", handlers.InterviewGrade)
 	}
 
 	return r

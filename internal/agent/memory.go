@@ -9,15 +9,16 @@ import (
 )
 
 // ThreadState holds per-conversation memory: chat history plus parsed
-// artifacts (resume/job/report) so the analyze_match tool can retrieve them
-// without the LLM re-passing large text blobs between tool calls.
+// artifacts (resume/job/report/interview questions) so tools can retrieve
+// them without the LLM re-passing large text blobs between tool calls.
 type ThreadState struct {
-	messages   []openai.ChatCompletionMessage
-	resumeText string
-	resume     *models.Resume
-	jobText    string
-	job        *models.Job
-	report     *models.MatchReport
+	messages           []openai.ChatCompletionMessage
+	resumeText         string
+	resume             *models.Resume
+	jobText            string
+	job                *models.Job
+	report             *models.MatchReport
+	interviewQuestions []models.InterviewQuestion
 }
 
 // Agent is the unified agent with one shared in-memory conversation store.
