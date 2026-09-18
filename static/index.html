@@ -520,12 +520,14 @@ let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
 let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
 let interviewPrepOcrLoading = false; // 面试准备页简历 OCR 是否进行中
 let interviewPrepJDText = '';    // 面试准备页 JD 文本
+let interviewPrepAbortCtrl = null; // 面试准备页 OCR 取消控制器
 
 let matchPrepActive = false;     // 是否处于匹配分析准备页
 let matchPrepFile = null;        // 匹配准备页上传的简历文件
 let matchPrepResumeText = '';    // 匹配准备页简历文本
 let matchPrepOcrLoading = false; // 匹配准备页简历 OCR 是否进行中
 let matchPrepJDText = '';        // 匹配准备页 JD 文本
+let matchPrepAbortCtrl = null;   // 匹配准备页 OCR 取消控制器
 
 // 会话级共享材料：最近一次成功提交的简历/JD，供 match 与 interview 双向复用
 let sharedResumeText = '';
@@ -974,15 +976,17 @@ function setCollectedInfo(info) { /* deprecated */ }
 function resetCollectedInfo() { /* deprecated */ }
 
 // ===== 文件解析 =====
-async function parsePDF(file) {
+async function parsePDF(file, signal) {
   addMessage('assistant', '⏳ 正在渲染 PDF 页面...');
   await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.min.mjs');
+  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   // Set worker path for pdf.js v5
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs';
   const arrayBuf = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
   const images = [];
   for (let i = 1; i <= pdf.numPages; i++) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale: 1.5 });
     const canvas = document.createElement('canvas');
@@ -993,19 +997,20 @@ async function parsePDF(file) {
   }
   addMessage('assistant', `⏳ PDF 渲染完成（${pdf.numPages} 页），正在识别文字...`);
   const resp = await fetch('/api/resume/upload', {
-    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images })
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images }), signal
   });
   const data = await checkResponse(resp);
   return data.resume?.raw_text || JSON.stringify(data.resume);
 }
 
-async function parseImage(file) {
+async function parseImage(file, signal) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
+      if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return; }
       const base64 = reader.result;
       const resp = await fetch('/api/resume/upload', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images: [base64] })
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images: [base64] }), signal
       });
       try {
         const data = await checkResponse(resp);
@@ -1373,16 +1378,20 @@ function resetApp() {
   interviewGrades = {};
   interviewDone = false;
   window._interviewExited = false;
+  if (matchPrepAbortCtrl) matchPrepAbortCtrl.abort();
   matchPrepActive = false;
   matchPrepFile = null;
   matchPrepResumeText = '';
   matchPrepOcrLoading = false;
   matchPrepJDText = '';
+  matchPrepAbortCtrl = null;
+  if (interviewPrepAbortCtrl) interviewPrepAbortCtrl.abort();
   interviewPrepActive = false;
   interviewPrepFile = null;
   interviewPrepResumeText = '';
   interviewPrepOcrLoading = false;
   interviewPrepJDText = '';
+  interviewPrepAbortCtrl = null;
   sharedResumeText = '';
   sharedJDText = '';
   document.getElementById('user-input').value = '';
@@ -1489,20 +1498,23 @@ async function processMatchFile(file) {
   if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
   matchPrepFile = file;
   matchPrepOcrLoading = true;
+  matchPrepAbortCtrl = new AbortController();
   renderMatchPrep(document.getElementById('report-container'));
   showToolStatus('⏳ 正在识别简历文字...');
   try {
     let text;
-    if (file.type === 'application/pdf') text = await parsePDF(file);
-    else if (file.type.startsWith('image/')) text = await parseImage(file);
+    if (file.type === 'application/pdf') text = await parsePDF(file, matchPrepAbortCtrl.signal);
+    else if (file.type.startsWith('image/')) text = await parseImage(file, matchPrepAbortCtrl.signal);
     else text = await file.text();
     matchPrepResumeText = text;
     const ta = document.getElementById('match-prep-resume');
     if (ta) ta.value = text;
   } catch (err) {
-    showToast('简历识别失败: ' + (err.message || err));
+    if (err.name === 'AbortError') { /* 已取消，静默 */ }
+    else showToast('简历识别失败: ' + (err.message || err));
   } finally {
     matchPrepOcrLoading = false;
+    matchPrepAbortCtrl = null;
     hideToolStatus();
   }
 }
@@ -1553,6 +1565,7 @@ async function startMatch(btn) {
 }
 
 function exitMatchPrep() {
+  if (matchPrepAbortCtrl) matchPrepAbortCtrl.abort();
   const reportEl = document.getElementById('report-container');
   const chatEl = document.getElementById('chat-container');
   reportEl.classList.remove('show');
@@ -1624,20 +1637,23 @@ async function processInterviewFile(file) {
   if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
   interviewPrepFile = file;
   interviewPrepOcrLoading = true;
+  interviewPrepAbortCtrl = new AbortController();
   renderInterviewPrep(document.getElementById('interview-container'));
   showToolStatus('⏳ 正在识别简历文字...');
   try {
     let text;
-    if (file.type === 'application/pdf') text = await parsePDF(file);
-    else if (file.type.startsWith('image/')) text = await parseImage(file);
+    if (file.type === 'application/pdf') text = await parsePDF(file, interviewPrepAbortCtrl.signal);
+    else if (file.type.startsWith('image/')) text = await parseImage(file, interviewPrepAbortCtrl.signal);
     else text = await file.text();
     interviewPrepResumeText = text;
     const ta = document.getElementById('iv-prep-resume');
     if (ta) ta.value = text;
   } catch (err) {
-    showToast('简历识别失败: ' + (err.message || err));
+    if (err.name === 'AbortError') { /* 已取消，静默 */ }
+    else showToast('简历识别失败: ' + (err.message || err));
   } finally {
     interviewPrepOcrLoading = false;
+    interviewPrepAbortCtrl = null;
     hideToolStatus();
   }
 }
@@ -1821,6 +1837,7 @@ function renderInterviewSummary(container) {
 }
 
 function exitInterview() {
+  if (interviewPrepAbortCtrl) interviewPrepAbortCtrl.abort();
   const ivEl = document.getElementById('interview-container');
   const chatEl = document.getElementById('chat-container');
   ivEl.classList.remove('show');
