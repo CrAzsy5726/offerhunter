@@ -518,10 +518,12 @@ let interviewDone = false;
 let interviewPrepFile = null;   // 准备页上传的简历文件
 let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
 let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
+let interviewPrepOcrLoading = false; // 面试准备页简历 OCR 是否进行中
 
 let matchPrepActive = false;     // 是否处于匹配分析准备页
 let matchPrepFile = null;        // 匹配准备页上传的简历文件
 let matchPrepResumeText = '';    // 匹配准备页简历文本
+let matchPrepOcrLoading = false; // 匹配准备页简历 OCR 是否进行中
 
 // ===== 消息系统 =====
 function addMessage(type, content) {
@@ -1368,9 +1370,11 @@ function resetApp() {
   matchPrepActive = false;
   matchPrepFile = null;
   matchPrepResumeText = '';
+  matchPrepOcrLoading = false;
   interviewPrepActive = false;
   interviewPrepFile = null;
   interviewPrepResumeText = '';
+  interviewPrepOcrLoading = false;
   document.getElementById('user-input').value = '';
   hideToolStatus();
   document.getElementById('report-banner').style.display = 'none';
@@ -1421,6 +1425,7 @@ function enterMatchPrep() {
   matchPrepFile = null;
   matchPrepResumeText = '';
   matchPrepActive = true;
+  matchPrepOcrLoading = false;
   chatEl.style.display = 'none';
   ivEl.style.display = 'none';
   reportEl.style.display = 'block';
@@ -1471,6 +1476,7 @@ async function processMatchFile(file) {
   const supported = ['application/pdf', 'text/plain', 'image/jpeg', 'image/png', 'image/webp'];
   if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
   matchPrepFile = file;
+  matchPrepOcrLoading = true;
   renderMatchPrep(document.getElementById('report-container'));
   showToolStatus('⏳ 正在识别简历文字...');
   try {
@@ -1484,15 +1490,24 @@ async function processMatchFile(file) {
   } catch (err) {
     showToast('简历识别失败: ' + (err.message || err));
   } finally {
+    matchPrepOcrLoading = false;
     hideToolStatus();
   }
 }
 
 async function startMatch(btn) {
+  if (matchPrepOcrLoading) {
+    showToast('请等待简历文字提取完成');
+    return;
+  }
   const resumeText = (document.getElementById('match-prep-resume')?.value || '').trim() || matchPrepResumeText;
   const jdText = (document.getElementById('match-prep-jd')?.value || '').trim();
-  if (!resumeText && !jdText) {
-    showToast('请至少上传简历或粘贴 JD');
+  if (!resumeText) {
+    showToast('请上传简历或粘贴简历文本');
+    return;
+  }
+  if (!jdText) {
+    showToast('请粘贴岗位 JD');
     return;
   }
 
@@ -1541,6 +1556,7 @@ function enterInterviewPrep() {
   interviewPrepFile = null;
   interviewPrepResumeText = '';
   interviewPrepActive = true;
+  interviewPrepOcrLoading = false;
   chatEl.style.display = 'none';
   ivEl.style.display = 'block';
   ivEl.classList.remove('show');
@@ -1591,6 +1607,7 @@ async function processInterviewFile(file) {
   const supported = ['application/pdf', 'text/plain', 'image/jpeg', 'image/png', 'image/webp'];
   if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
   interviewPrepFile = file;
+  interviewPrepOcrLoading = true;
   renderInterviewPrep(document.getElementById('interview-container'));
   showToolStatus('⏳ 正在识别简历文字...');
   try {
@@ -1604,11 +1621,16 @@ async function processInterviewFile(file) {
   } catch (err) {
     showToast('简历识别失败: ' + (err.message || err));
   } finally {
+    interviewPrepOcrLoading = false;
     hideToolStatus();
   }
 }
 
 async function startInterviewWithMaterials(btn) {
+  if (interviewPrepOcrLoading) {
+    showToast('请等待简历文字提取完成');
+    return;
+  }
   const resumeText = (document.getElementById('iv-prep-resume')?.value || '').trim() || interviewPrepResumeText;
   const jdText = (document.getElementById('iv-prep-jd')?.value || '').trim();
   if (!resumeText && !jdText) {
