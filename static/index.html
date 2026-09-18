@@ -520,6 +520,10 @@ let interviewPrepFile = null;   // 准备页上传的简历文件
 let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
 let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
 
+let matchPrepActive = false;     // 是否处于匹配分析准备页
+let matchPrepFile = null;        // 匹配准备页上传的简历文件
+let matchPrepResumeText = '';    // 匹配准备页简历文本
+
 // ===== 消息系统 =====
 function addMessage(type, content) {
   messages.push({ type, content, time: new Date() });
@@ -603,6 +607,9 @@ document.addEventListener('dragover', e => {
   if (interviewPrepActive) {
     const box = document.getElementById('iv-prep-file');
     if (box) box.classList.add('drag-over');
+  } else if (matchPrepActive) {
+    const box = document.getElementById('match-prep-file');
+    if (box) box.classList.add('drag-over');
   } else {
     dropOverlay.classList.add('show');
   }
@@ -610,6 +617,9 @@ document.addEventListener('dragover', e => {
 document.addEventListener('dragleave', e => {
   if (interviewPrepActive) {
     const box = document.getElementById('iv-prep-file');
+    if (box && !e.relatedTarget) box.classList.remove('drag-over');
+  } else if (matchPrepActive) {
+    const box = document.getElementById('match-prep-file');
     if (box && !e.relatedTarget) box.classList.remove('drag-over');
   } else if (!e.relatedTarget) {
     dropOverlay.classList.remove('show');
@@ -623,6 +633,10 @@ document.addEventListener('drop', e => {
     const box = document.getElementById('iv-prep-file');
     if (box) box.classList.remove('drag-over');
     processInterviewFile(file);
+  } else if (matchPrepActive) {
+    const box = document.getElementById('match-prep-file');
+    if (box) box.classList.remove('drag-over');
+    processMatchFile(file);
   } else {
     dropOverlay.classList.remove('show');
     attachFile(file);
@@ -648,8 +662,11 @@ function quickStart(mode) {
     enterInterviewPrep();
     return;
   }
+  if (mode === 'match') {
+    enterMatchPrep();
+    return;
+  }
   const triggers = {
-    match: '你好，我想做简历和JD的匹配分析',
     strategy: '帮我制定求职策略，找找工作',
     pivot: '我想规划一下职业转型',
     salary: '帮我查一下薪资水平',
@@ -1351,6 +1368,12 @@ function resetApp() {
   interviewGrades = {};
   interviewDone = false;
   window._interviewExited = false;
+  matchPrepActive = false;
+  matchPrepFile = null;
+  matchPrepResumeText = '';
+  interviewPrepActive = false;
+  interviewPrepFile = null;
+  interviewPrepResumeText = '';
   document.getElementById('user-input').value = '';
   hideToolStatus();
   document.getElementById('report-banner').style.display = 'none';
@@ -1391,6 +1414,127 @@ function viewReport() {
 function dismissBanner() {
   document.getElementById('report-banner').style.display = 'none';
   currentReport = null;
+}
+
+// ===== 匹配分析准备界面 =====
+function enterMatchPrep() {
+  const chatEl = document.getElementById('chat-container');
+  const reportEl = document.getElementById('report-container');
+  const ivEl = document.getElementById('interview-container');
+  matchPrepFile = null;
+  matchPrepResumeText = '';
+  matchPrepActive = true;
+  chatEl.style.display = 'none';
+  ivEl.style.display = 'none';
+  reportEl.style.display = 'block';
+  reportEl.classList.remove('show');
+  renderMatchPrep(reportEl);
+  requestAnimationFrame(() => reportEl.classList.add('show'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderMatchPrep(container) {
+  container.innerHTML = `<div class="interview-wrap">
+    <div class="iv-header">
+      <div class="iv-title">📄 简历匹配分析</div>
+      <button class="iv-exit" onclick="exitMatchPrep()">✕ 退出</button>
+    </div>
+
+    <div class="iv-card iv-prep-section">
+      <div class="iv-prep-label">📄 上传简历（可选）</div>
+      <div class="iv-prep-file ${matchPrepFile ? 'has-file' : ''}" id="match-prep-file">
+        ${matchPrepFile ? `📎 ${matchPrepFile.name}` : '点击或拖拽上传 PDF / 图片简历'}
+        <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="match-prep-file-input" onchange="handleMatchFile(event)">
+      </div>
+      <div class="iv-prep-hint">也可在下方文本框直接粘贴简历文本</div>
+      <textarea id="match-prep-resume" placeholder="或粘贴简历文本..." style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepResumeText}</textarea>
+    </div>
+
+    <div class="iv-card iv-prep-section">
+      <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
+      <textarea id="match-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;"></textarea>
+    </div>
+
+    <button class="iv-submit" onclick="startMatch(this)">开始分析</button>
+  </div>`;
+
+  const fileBox = document.getElementById('match-prep-file');
+  if (fileBox) {
+    fileBox.style.cursor = 'pointer';
+    fileBox.onclick = () => document.getElementById('match-prep-file-input').click();
+  }
+}
+
+async function handleMatchFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (file) await processMatchFile(file);
+}
+
+async function processMatchFile(file) {
+  const supported = ['application/pdf', 'text/plain', 'image/jpeg', 'image/png', 'image/webp'];
+  if (!supported.includes(file.type)) { showToast('支持的文件格式：PDF、TXT、JPG、PNG、WebP'); return; }
+  matchPrepFile = file;
+  renderMatchPrep(document.getElementById('report-container'));
+  showToolStatus('⏳ 正在识别简历文字...');
+  try {
+    let text;
+    if (file.type === 'application/pdf') text = await parsePDF(file);
+    else if (file.type.startsWith('image/')) text = await parseImage(file);
+    else text = await file.text();
+    matchPrepResumeText = text;
+    const ta = document.getElementById('match-prep-resume');
+    if (ta) ta.value = text;
+  } catch (err) {
+    showToast('简历识别失败: ' + (err.message || err));
+  } finally {
+    hideToolStatus();
+  }
+}
+
+async function startMatch(btn) {
+  const resumeText = (document.getElementById('match-prep-resume')?.value || '').trim() || matchPrepResumeText;
+  const jdText = (document.getElementById('match-prep-jd')?.value || '').trim();
+  if (!resumeText && !jdText) {
+    showToast('请至少上传简历或粘贴 JD');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '正在分析（约 20-40 秒）...'; }
+
+  try {
+    const resp = await fetch('/api/match', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ resume_text: resumeText, job_text: jdText })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '分析失败');
+
+    matchPrepActive = false;
+    currentReport = data.report;
+    _hasSeenReport = false;
+    cachedMarketInfo = null;
+    renderReport(data.report, resumeText, jdText, null);
+    document.getElementById('report-container').classList.add('show');
+    // 异步加载市场数据
+    fetchMarketData(data.report).then(mkt => {
+      cachedMarketInfo = mkt;
+      injectMarketSection(mkt);
+    });
+  } catch (err) {
+    showToast('分析失败: ' + (err.message || err));
+    if (btn) { btn.disabled = false; btn.textContent = '开始分析'; }
+  }
+}
+
+function exitMatchPrep() {
+  const reportEl = document.getElementById('report-container');
+  const chatEl = document.getElementById('chat-container');
+  reportEl.classList.remove('show');
+  reportEl.style.display = 'none';
+  reportEl.innerHTML = '';
+  chatEl.style.display = 'block';
+  matchPrepActive = false;
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ===== 模拟面试界面 =====
