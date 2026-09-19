@@ -2,6 +2,7 @@ package agent
 
 import (
 	"sync"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 
@@ -20,16 +21,30 @@ type ThreadState struct {
 	report             *models.MatchReport
 	interviewQuestions []models.InterviewQuestion
 	lastIntent         string
+	lastAccess         time.Time
 }
 
 // Agent is the unified agent with one shared in-memory conversation store.
 type Agent struct {
 	mu      sync.RWMutex
 	threads map[string]*ThreadState
+	ttl     time.Duration
 }
 
+// NewAgent returns an Agent with an in-memory session store. Idle sessions
+// older than ttl are evicted by a background goroutine.
 func NewAgent() *Agent {
-	return &Agent{threads: map[string]*ThreadState{}}
+	return NewAgentWithTTL(30 * time.Minute)
+}
+
+// NewAgentWithTTL lets callers (or tests) override the idle-session TTL.
+func NewAgentWithTTL(ttl time.Duration) *Agent {
+	a := &Agent{
+		threads: map[string]*ThreadState{},
+		ttl:     ttl,
+	}
+	go a.cleanupLoop()
+	return a
 }
 
 func (a *Agent) getOrCreate(threadID string) *ThreadState {
@@ -40,6 +55,7 @@ func (a *Agent) getOrCreate(threadID string) *ThreadState {
 		st = &ThreadState{}
 		a.threads[threadID] = st
 	}
+	st.lastAccess = time.Now()
 	return st
 }
 
@@ -64,4 +80,24 @@ func (a *Agent) RecordIntent(threadID, intent string) {
 		a.threads[threadID] = st
 	}
 	st.lastIntent = intent
+	st.lastAccess = time.Now()
+}
+
+// cleanupLoop periodically evicts sessions idle longer than the TTL.
+func (a *Agent) cleanupLoop() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for range ticker.C {
+		a.evictIdle()
+	}
+}
+
+func (a *Agent) evictIdle() {
+	now := time.Now()
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for id, st := range a.threads {
+		if now.Sub(st.lastAccess) > a.ttl {
+			delete(a.threads, id)
+		}
+	}
 }
