@@ -479,6 +479,7 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
 
 <script>
 window._toolRunning = false;
+window._suppressedBuf = '';
 let _currentIntent = '';
 
 var _warmCSS=document.getElementById('warm-theme').outerHTML;function toggleThemeMenu(){var m=document.getElementById('theme-menu');var o=m.style.opacity==='1';if(o){m.style.opacity='0';m.style.transform='translateY(-4px)';m.style.pointerEvents='none'}else{m.style.display='block';requestAnimationFrame(function(){m.style.opacity='1';m.style.transform='translateY(0)';m.style.pointerEvents='auto'})}}document.addEventListener('click',function(e){var m=document.getElementById('theme-menu');if(!e.target.closest('#theme-btn')&&!e.target.closest('#theme-menu')&&m.style.opacity==='1'){m.style.opacity='0';m.style.transform='translateY(-4px)';m.style.pointerEvents='none'}});function setTheme(mode){var m=document.getElementById('theme-menu');m.style.opacity='0';m.style.transform='translateY(-4px)';m.style.pointerEvents='none';localStorage.setItem('oh_theme',mode);if(mode==='auto'){mode=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.getElementById('theme-label').textContent='自动'}else{document.getElementById('theme-label').textContent=mode==='dark'?'暗色':'暖色'}applyTheme(mode)}function applyTheme(mode){var w=document.getElementById('warm-theme');if(mode==='dark'){if(w)w.remove()}else{if(!w)document.head.insertAdjacentHTML('beforeend',_warmCSS)}}(function(){var s=localStorage.getItem('oh_theme')||'auto';if(s==='auto'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;applyTheme(d?'dark':'light');document.getElementById('theme-label').textContent='自动'}else{applyTheme(s);document.getElementById('theme-label').textContent=s==='dark'?'暗色':'暖色'}})();window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(e){if(localStorage.getItem('oh_theme')==='auto')applyTheme(e.matches?'dark':'light')});
@@ -785,11 +786,15 @@ function handleSSEEvent(event, dataStr) {
         window._suppressTokens = false;
         setTimeout(hideToolStatus, 2000);
       }
+      window._suppressedBuf = '';
       break;
 
     case 'token':
-      // 工具执行期间跳过 token / match 模式不显示 LLM 文字
-      if (window._toolRunning || window._reportIncoming || window._suppressTokens) break;
+      // 工具执行期间跳过 token（防止 DeepSeek JSON 泄漏）
+      if (window._toolRunning || window._reportIncoming) break;
+      // match 模式暂存 LLM 文字：若最终出了报告页就丢弃，否则兜底显示，
+      // 避免"意图误判为 match 但报告没生成"时整屏空白
+      if (window._suppressTokens) { window._suppressedBuf += data.content; break; }
       let bubbleId = messages.find(m => m._streaming)?._id;
       if (!bubbleId) {
         const id = 's-' + Date.now();
@@ -825,6 +830,7 @@ function handleSSEEvent(event, dataStr) {
       hideToolStatus();
       if (!data.report) break;
       window._reportIncoming = true;
+      window._suppressedBuf = '';  // 报告页接管，丢弃暂存的 LLM 文字
       currentReport = data.report;
       _currentIntent = '';
       document.getElementById('report-banner').style.display = 'none';
@@ -878,6 +884,11 @@ function handleSSEEvent(event, dataStr) {
       hideToolStatus();
       window._reportIncoming = false;
       window._suppressTokens = false;
+      // 兜底：match 意图抑制了文字但最终没出报告页 → 显示暂存文字，不留白屏
+      if (window._suppressedBuf) {
+        addMessage('assistant', window._suppressedBuf);
+        window._suppressedBuf = '';
+      }
       const doneMsg = messages.find(m => m._streaming);
       if (doneMsg) delete doneMsg._streaming;
       // 更新 thread_id
@@ -1350,6 +1361,7 @@ function resetApp() {
   _hasSeenReport = false;
   window._reportIncoming = false;
   window._suppressTokens = false;
+  window._suppressedBuf = '';
   threadId = crypto.randomUUID();
   const chatEl = document.getElementById('chat-container');
   const reportEl = document.getElementById('report-container');

@@ -2,7 +2,22 @@ package agent
 
 import "testing"
 
+// longResumeJD builds a realistic pasted resume+JD that clears the material
+// length threshold.
+func longResumeJD() string {
+	return "教育背景：2019-2023 XX大学 计算机科学与技术 本科，主修数据结构、操作系统。\n" +
+		"项目经历：电商订单系统，负责后端接口开发，使用 Java、Spring Boot、MySQL。\n" +
+		"实习经历：2022 年在一家互联网公司实习，参与订单模块开发。\n" +
+		"专业技能：Java、Spring Boot、MySQL、Redis。\n" +
+		"\n" +
+		"招聘 Java 后端工程师\n" +
+		"岗位职责：负责后端服务的设计与开发，参与系统架构优化。\n" +
+		"任职要求：本科及以上学历，熟悉 Java、Spring Boot、MySQL，有分布式开发经验优先。"
+}
+
 func TestKeywordIntent(t *testing.T) {
+	material := longResumeJD()
+
 	cases := []struct {
 		msg        string
 		prevIntent string
@@ -18,16 +33,25 @@ func TestKeywordIntent(t *testing.T) {
 		{"帮我制定求职计划", "", "strategy"},
 		{"你好", "", ""},
 
-		// Bare resume + JD, no explicit phrase.
+		// Real pasted material, no explicit phrase.
 		// Cold start (no prev intent) → match.
-		{"教育背景：XX大学计算机本科\n项目经历：电商系统\n\n招聘Java工程师，岗位职责：负责后端开发，任职要求：熟悉Java", "", "match"},
-		{"学校：XX大学 学历：本科 技能：Java\n\n岗位：Java后端 薪资范围：15-25K", "", "match"},
+		{material, "", "match"},
 		// Continuing an interview flow → interview (not match).
-		{"教育背景：XX大学计算机本科\n项目经历：电商系统\n\n招聘Java工程师，岗位职责：负责后端开发，任职要求：熟悉Java", "interview", "interview"},
-		{"学校：XX大学 学历：本科 技能：Go\n\n岗位：Go后端 薪资范围：20-35K", "interview", "interview"},
-
+		{material, "interview", "interview"},
 		// Explicit "分析" overrides even an in-progress interview flow.
-		{"教育背景：XX大学\n\n招聘Java工程师，岗位职责：后端开发\n\n帮我分析", "interview", "match"},
+		{material + "\n帮我分析", "interview", "match"},
+
+		// Regression: a bare reply inside an ongoing flow must continue that
+		// flow. "前端工程师，重庆，应届生" contains "工程师" + "应届" but is a
+		// reply, not material — it must not be read as a cold-start match.
+		{"前端工程师，重庆，应届生", "salary", "salary"},
+		{"北京，3年经验", "salary", "salary"},
+		{"重庆", "salary", "salary"},
+		{"应届，想找前端", "strategy", "strategy"},
+
+		// Same bare reply with no ongoing flow → no deterministic hit, so it
+		// falls through to the LLM classifier (never a false "match").
+		{"前端工程师，重庆，应届生", "", ""},
 
 		// JD only / resume only → no hit.
 		{"招聘Java工程师，岗位职责：负责后端开发，任职要求：熟悉Java", "", ""},
@@ -38,12 +62,12 @@ func TestKeywordIntent(t *testing.T) {
 		got, ok := keywordIntent(c.msg, c.prevIntent)
 		if c.expect == "" {
 			if ok {
-				t.Errorf("keywordIntent(%q, %q) = (%q, true), want no hit", c.msg, c.prevIntent, got)
+				t.Errorf("keywordIntent(%.40q, %q) = (%q, true), want no hit", c.msg, c.prevIntent, got)
 			}
 			continue
 		}
 		if !ok || got != c.expect {
-			t.Errorf("keywordIntent(%q, %q) = (%q, %v), want (%q, true)", c.msg, c.prevIntent, got, ok, c.expect)
+			t.Errorf("keywordIntent(%.40q, %q) = (%q, %v), want (%q, true)", c.msg, c.prevIntent, got, ok, c.expect)
 		}
 	}
 }

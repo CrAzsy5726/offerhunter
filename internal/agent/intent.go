@@ -59,7 +59,15 @@ func keywordIntent(message, prevIntent string) (string, bool) {
 		return "match", true
 	}
 
-	// 2. No explicit intent, but both resume and JD are present.
+	// 2. A bare reply continues the flow we're already in. Flows like salary
+	// ask the user for a missing detail ("岗位？城市？经验？"), and the answer
+	// ("前端工程师，重庆，应届生") is a reply — not a new instruction. Without
+	// this, such replies get misread as a fresh request.
+	if isOngoingFlow(prevIntent) && !hasResumeAndJD(message) {
+		return prevIntent, true
+	}
+
+	// 3. No explicit intent, but both resume and JD are present.
 	if hasResumeAndJD(message) {
 		// Continue an in-progress interview flow (the system just asked for
 		// resume/JD); otherwise treat bare resume+JD as a cold-start match.
@@ -72,20 +80,31 @@ func keywordIntent(message, prevIntent string) (string, bool) {
 	return "", false
 }
 
-// jdSignals are words that almost only appear in a job description.
+// isOngoingFlow reports whether an intent represents a conversation the
+// assistant drives by asking follow-up questions.
+func isOngoingFlow(intent string) bool {
+	switch intent {
+	case "salary", "interview", "pivot", "strategy":
+		return true
+	}
+	return false
+}
+
+// jdSignals are structural markers of a pasted job description. Loose words
+// like "工程师"/"待遇" are deliberately excluded — they also appear in short
+// replies such as "前端工程师，重庆，应届生".
 var jdSignals = []string{
 	"招聘", "岗位职责", "任职要求", "职位描述", "工作职责",
 	"薪资范围", "薪资待遇", "岗位要求", "职位要求", "岗位描述",
 	"工作内容", "加分项", "优先考虑", "五险一金", "福利待遇",
-	"工程师", "开发工程师", "职责", "任职", "待遇",
 }
 
-// resumeSignals are words that almost only appear in a resume.
+// resumeSignals are structural markers of a pasted resume. Loose words like
+// "应届"/"学校" are deliberately excluded for the same reason as above.
 var resumeSignals = []string{
 	"教育背景", "教育经历", "项目经历", "项目经验", "实习经历",
 	"实习经验", "工作经历", "自我评价", "个人简介", "专业技能",
-	"个人技能", "学校", "学历", "毕业院校", "主修", "所学专业",
-	"应届", "在校", "校园", "获奖", "求职意向", "期望岗位",
+	"个人技能", "毕业院校", "所学专业", "求职意向", "期望岗位",
 }
 
 // hasSalaryIntent reports whether the message expresses a salary query,
@@ -105,9 +124,17 @@ func hasSalaryIntent(s string) bool {
 	return false
 }
 
-// hasResumeAndJD reports whether the message contains both resume-ish and
-// JD-ish signals, indicating the user provided both a resume and a JD.
+// minMaterialRunes is the length below which a message cannot plausibly be
+// pasted resume/JD material. Real materials are documents, not one-liners.
+const minMaterialRunes = 80
+
+// hasResumeAndJD reports whether the message is pasted resume+JD material:
+// it must carry structural markers from both sides AND be long enough to
+// actually be a document.
 func hasResumeAndJD(msg string) bool {
+	if len([]rune(msg)) < minMaterialRunes {
+		return false
+	}
 	lower := strings.ToLower(msg)
 
 	hasJD := false
