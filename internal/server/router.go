@@ -29,11 +29,16 @@ func NewRouter() *gin.Engine {
 		api.POST("/resume/upload", handlers.ResumeUpload)
 		api.POST("/job/parse", handlers.JobParse)
 		api.POST("/match", handlers.Match)
-		api.POST("/market", handlers.Market)
 		api.POST("/intent/check", handlers.IntentCheck)
 		api.POST("/export", handlers.Export)
 		api.POST("/interview/grade", handlers.InterviewGrade)
 		api.POST("/interview/generate", handlers.InterviewGenerate)
+
+		api.GET("/feedback", handlers.FeedbackList)
+		api.POST("/feedback", handlers.FeedbackCreate)
+		api.POST("/feedback/:id/upvote", handlers.FeedbackUpvote)
+		api.POST("/feedback/:id/reply", handlers.FeedbackReply)
+		api.POST("/feedback/:id/reply/:rid/upvote", handlers.FeedbackReplyUpvote)
 	}
 
 	return r

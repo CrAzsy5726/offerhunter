@@ -28,10 +28,13 @@ func TestKeywordIntent(t *testing.T) {
 		{"简历很长...JD很长...帮我分析", "", "match"},
 		{"我想做简历和JD的匹配分析", "", "match"},
 		{"帮我模拟面试", "", "interview"},
-		{"我想转行到AI", "", "pivot"},
-		{"帮我查一下薪资", "", "salary"},
-		{"帮我制定求职计划", "", "strategy"},
 		{"你好", "", ""},
+
+		// Removed features (salary/strategy/pivot) no longer map to an intent;
+		// they fall through so the LLM classifier routes them to "other".
+		{"我想转行到AI", "", ""},
+		{"帮我查一下薪资", "", ""},
+		{"帮我制定求职计划", "", ""},
 
 		// Real pasted material, no explicit phrase.
 		// Cold start (no prev intent) → match.
@@ -41,13 +44,11 @@ func TestKeywordIntent(t *testing.T) {
 		// Explicit "分析" overrides even an in-progress interview flow.
 		{material + "\n帮我分析", "interview", "match"},
 
-		// Regression: a bare reply inside an ongoing flow must continue that
-		// flow. "前端工程师，重庆，应届生" contains "工程师" + "应届" but is a
-		// reply, not material — it must not be read as a cold-start match.
-		{"前端工程师，重庆，应届生", "salary", "salary"},
-		{"北京，3年经验", "salary", "salary"},
-		{"重庆", "salary", "salary"},
-		{"应届，想找前端", "strategy", "strategy"},
+		// Regression: a bare reply inside an ongoing interview continues it.
+		// "前端工程师，重庆，应届生" must not be read as pasted material.
+		{"前端工程师，重庆，应届生", "interview", "interview"},
+		{"北京，3年经验", "interview", "interview"},
+		{"重庆", "interview", "interview"},
 
 		// Same bare reply with no ongoing flow → no deterministic hit, so it
 		// falls through to the LLM classifier (never a false "match").

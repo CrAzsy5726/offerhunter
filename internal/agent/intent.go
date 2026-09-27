@@ -15,9 +15,6 @@ import (
 var intentLabels = map[string]string{
 	"match":     "简历分析",
 	"interview": "模拟面试",
-	"strategy":  "求职策略",
-	"pivot":     "职业转型",
-	"salary":    "薪资谈判",
 	"other":     "通用助手",
 }
 
@@ -28,7 +25,7 @@ var intentLabels = map[string]string{
 //
 // prevIntent is the intent of the previous turn in the same conversation, used
 // to continue an in-progress flow (e.g. interview) when the user follows up
-// with bare resume+JD and no explicit instruction.
+// with a bare reply and no explicit instruction.
 func keywordIntent(message, prevIntent string) (string, bool) {
 	r := []rune(strings.ToLower(message))
 	if len(r) > 120 {
@@ -47,47 +44,25 @@ func keywordIntent(message, prevIntent string) (string, bool) {
 
 	// 1. Explicit intent phrases win over everything (user stated a goal).
 	switch {
-	case has("转行", "转型", "换方向", "跨领域", "换岗", "转岗"):
-		return "pivot", true
 	case has("模拟面试", "面试练习", "面试题", "出题", "面试一下", "准备面试"):
 		return "interview", true
-	case hasSalaryIntent(tail):
-		return "salary", true
-	case has("找工作", "求职计划", "求职策略", "求职规划", "求职"):
-		return "strategy", true
 	case has("分析", "匹配", "合适", "测评", "匹配度"):
 		return "match", true
 	}
 
-	// 2. A bare reply continues the flow we're already in. Flows like salary
-	// ask the user for a missing detail ("岗位？城市？经验？"), and the answer
-	// ("前端工程师，重庆，应届生") is a reply — not a new instruction. Without
-	// this, such replies get misread as a fresh request.
-	if isOngoingFlow(prevIntent) && !hasResumeAndJD(message) {
-		return prevIntent, true
+	// 2. No explicit instruction: a bare reply continues an in-progress
+	// interview (the assistant asked for resume/JD, the user answered).
+	if prevIntent == "interview" {
+		return "interview", true
 	}
 
-	// 3. No explicit intent, but both resume and JD are present.
+	// 3. No explicit instruction and no ongoing flow: pasted resume+JD
+	// material is a cold-start match.
 	if hasResumeAndJD(message) {
-		// Continue an in-progress interview flow (the system just asked for
-		// resume/JD); otherwise treat bare resume+JD as a cold-start match.
-		if prevIntent == "interview" {
-			return "interview", true
-		}
 		return "match", true
 	}
 
 	return "", false
-}
-
-// isOngoingFlow reports whether an intent represents a conversation the
-// assistant drives by asking follow-up questions.
-func isOngoingFlow(intent string) bool {
-	switch intent {
-	case "salary", "interview", "pivot", "strategy":
-		return true
-	}
-	return false
 }
 
 // jdSignals are structural markers of a pasted job description. Loose words
@@ -105,23 +80,6 @@ var resumeSignals = []string{
 	"教育背景", "教育经历", "项目经历", "项目经验", "实习经历",
 	"实习经验", "工作经历", "自我评价", "个人简介", "专业技能",
 	"个人技能", "毕业院校", "所学专业", "求职意向", "期望岗位",
-}
-
-// hasSalaryIntent reports whether the message expresses a salary query,
-// excluding JD descriptive phrases like "薪资范围"/"薪资待遇" that would
-// otherwise be mistaken for a user asking about salary.
-func hasSalaryIntent(s string) bool {
-	for _, w := range []string{"薪资范围", "薪资待遇", "薪资福利", "薪资面议"} {
-		if strings.Contains(s, w) {
-			return false
-		}
-	}
-	for _, w := range []string{"薪资", "工资", "谈薪", "报价", "offer"} {
-		if strings.Contains(s, w) {
-			return true
-		}
-	}
-	return false
 }
 
 // minMaterialRunes is the length below which a message cannot plausibly be
@@ -205,11 +163,34 @@ func ClassifyIntent(ctx context.Context, message, prevIntent string) (string, st
 }
 
 // intentToolNames maps an intent to the tool names it is allowed to call.
+// "other" is intentionally empty: chitchat is plain chat, no tools.
 var intentToolNames = map[string][]string{
-	"match":     {"parse_resume", "parse_jd", "analyze_match", "research_market"},
-	"interview": {"parse_resume", "parse_jd", "generate_interview_questions", "research_market"},
-	"strategy":  {"search_job_listings", "generate_job_search_plan", "research_market"},
-	"pivot":     {"analyze_skill_transferability", "recommend_transition_roles", "research_market"},
-	"salary":    {"get_salary_benchmark", "generate_negotiation_strategy", "research_market"},
-	"other":     {"research_market"},
+	"match":     {"parse_resume", "parse_jd", "analyze_match"},
+	"interview": {"parse_resume", "parse_jd", "generate_interview_questions"},
+	"other":     {},
+}
+
+// unsupportedTopics are subjects the product deliberately does not cover.
+// A prompt-level instruction is not enough — the LLM tends to answer anyway
+// (and burn tokens fabricating data), so we intercept deterministically.
+var unsupportedTopics = []string{
+	"薪资", "工资", "薪酬", "年薪", "月薪", "待遇",
+	"转行", "转型", "职业规划", "职业发展",
+	"求职策略", "求职计划", "市场行情", "行业趋势", "就业前景", "行业前景",
+}
+
+const unsupportedReply = "抱歉，这个不在我的能力范围内。我可以帮你做**简历和 JD 的匹配分析**，" +
+	"或者用你的简历做一次**模拟面试** —— 想先试试哪个？"
+
+// UnsupportedTopicReply returns a canned reply when the message asks about a
+// subject the product does not support, so no LLM call is made. It returns
+// "" when the message is fine to handle normally.
+func UnsupportedTopicReply(message string) string {
+	lower := strings.ToLower(message)
+	for _, t := range unsupportedTopics {
+		if strings.Contains(lower, t) {
+			return unsupportedReply
+		}
+	}
+	return ""
 }

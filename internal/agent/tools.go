@@ -26,7 +26,6 @@ var (
 	matcher      = &services.Matcher{}
 	optimizer    = &services.Optimizer{}
 	gapAnalyzer  = &services.GapAnalyzer{}
-	marketSvc    = &services.MarketResearchService{}
 )
 
 func strParam(desc string) map[string]any {
@@ -69,28 +68,13 @@ var allTools = []Tool{
 			},
 		},
 	},
-	{
-		Name: "research_market",
-		Description: "查询某个岗位的市场信息，包括薪资范围、热门技能、招聘趋势、竞争度。" +
-			"调用时机：用户询问某个岗位/行业的薪资水平、市场需求、技能要求、就业前景时。" +
-			"job_info: 岗位信息（如\"Java后端开发\"或\"北京前端工程师\"），尽量包含城市和岗位名称。" +
-			"job_preference: 用户的求职偏好（如\"应届生\"、\"3年经验\"），可选。",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"job_info":       strParam("岗位信息"),
-				"job_preference": strParam("求职偏好（可选）"),
-			},
-		},
-	},
 }
 
 // toolExec maps a tool name to its implementation.
 var toolExec = map[string]ToolFunc{
-	"parse_resume":    execParseResume,
-	"parse_jd":        execParseJD,
-	"analyze_match":   execAnalyzeMatch,
-	"research_market": execResearchMarket,
+	"parse_resume":  execParseResume,
+	"parse_jd":      execParseJD,
+	"analyze_match": execAnalyzeMatch,
 }
 
 func execParseResume(ctx context.Context, args map[string]string, st *ThreadState) (string, error) {
@@ -236,20 +220,6 @@ func execAnalyzeMatch(ctx context.Context, args map[string]string, st *ThreadSta
 		thresholdSummary(report), c.ProjectDepth.Score, c.InternQuality.Score, c.TechStackFit.Score, c.OverallPower,
 		report.HiddenFit.Score, evTips, learnTips, len(gaps),
 		report.Benchmark.PassLine, emptyOr(report.Benchmark.Percentile, "未评估")), nil
-}
-
-func execResearchMarket(ctx context.Context, args map[string]string, st *ThreadState) (string, error) {
-	info, err := marketSvc.Research(ctx, args["job_info"], args["job_preference"])
-	if err != nil {
-		return "", err
-	}
-	skills := strings.Join(info.HotSkills, ", ")
-	if skills == "" {
-		skills = "未获取"
-	}
-	return fmt.Sprintf("市场分析结果：\n薪资范围: %s。\n热门技能: %s。\n招聘趋势: %s。\n竞争度: %s。\n综合: %s",
-		emptyOr(info.SalaryRange, "未获取"), skills, emptyOr(info.Trend, "未获取"),
-		emptyOr(info.Competition, "未获取"), emptyOr(info.Summary, "未获取")), nil
 }
 
 func grade(s int) string {

@@ -49,6 +49,15 @@ func Chat(c *gin.Context) {
 	globalAgent.RecordIntent(threadID, intent)
 	writeSSE(c.Writer, "intent", map[string]string{"intent": intent, "name": intentName})
 
+	// Unsupported topics get a canned reply — no LLM call, no token spend.
+	if intent == "other" {
+		if reply := agent.UnsupportedTopicReply(req.Message); reply != "" {
+			writeSSE(c.Writer, "token", map[string]string{"content": reply})
+			writeSSE(c.Writer, "done", map[string]string{"thread_id": threadID})
+			return
+		}
+	}
+
 	if err := globalAgent.Run(ctx, req.Message, threadID, intent, sink); err != nil {
 		writeSSE(c.Writer, "error", map[string]string{"message": err.Error()})
 	}

@@ -373,6 +373,27 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .iv-prep-file button:hover { color: var(--error); }
 .iv-prep-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem; }
 .iv-summary .iv-avg { font-size: 3rem; font-weight: 800; }
+
+/* 反馈页 */
+#feedback-container { display: none; width: 100%; padding: 1.5rem; opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
+#feedback-container.show { opacity: 1; transform: translateY(0); }
+.fb-item { margin-bottom: 0.8rem; }
+.fb-content { font-size: 0.95rem; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.fb-meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.7rem; font-size: 0.78rem; color: var(--text-secondary); }
+.fb-vote { padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 0.78rem; transition: all 0.18s ease; }
+.fb-vote:hover:not(:disabled) { color: var(--primary); border-color: var(--primary); background: var(--primary-glow); }
+.fb-vote.voted { color: var(--primary); border-color: var(--primary); background: var(--primary-glow); cursor: default; }
+.fb-vote:disabled { opacity: 0.7; }
+.fb-vote-sm { padding: 0.15rem 0.5rem; font-size: 0.72rem; }
+.fb-toggle { padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 0.78rem; }
+.fb-toggle:hover { color: var(--primary); border-color: var(--primary); }
+.fb-replies { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.fb-reply { padding: 0.6rem 0.8rem; background: rgba(148,163,184,0.05); border-radius: 8px; margin-bottom: 0.5rem; }
+.fb-reply-text { font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.fb-reply-meta { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; font-size: 0.72rem; color: var(--text-secondary); }
+.fb-reply-form { margin-top: 0.5rem; }
+.fb-reply-form textarea { width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 0.88rem; line-height: 1.6; resize: vertical; }
+.fb-reply-form textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 .iv-summary-list { max-width: 600px; margin: 1rem auto 0; text-align: left; }
 .iv-summary-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
 .iv-summary-item .iv-q-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; background: var(--primary-glow); color: var(--primary); }
@@ -433,7 +454,7 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
     </h1>
     <div style="display:flex;align-items:center;gap:0.75rem;">
       <span style="font-size:0.85rem;color:var(--text-secondary);">AI 求职匹配助手</span>
-      <button class="btn btn-secondary" onclick="resetApp()" style="font-size:0.8rem;padding:0.35rem 0.75rem;">重新开始</button> <div style="position:relative;"><button class="btn btn-secondary" onclick="toggleThemeMenu()" style="font-size:0.8rem;padding:0.35rem 0.75rem;display:inline-flex;align-items:center;gap:0.3rem;" id="theme-btn" title="切换主题"><span id="theme-label">主题</span> <span style="font-size:0.65rem;">▼</span></button><div id="theme-menu" style="opacity:0;transform:translateY(-4px);transition:opacity 0.2s ease,transform 0.2s ease;pointer-events:none;position:absolute;top:100%;right:0;margin-top:0.3rem;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:0.3rem;z-index:60;min-width:130px;box-shadow:0 4px 12px rgba(0,0,0,0.15);backdrop-filter:blur(12px);"><button onclick="setTheme('light')" class="theme-opt">☀️ 暖色</button><button onclick="setTheme('dark')" class="theme-opt">🌙 暗色</button><button onclick="setTheme('auto')" class="theme-opt">💻 跟随系统</button></div></div>
+      <button class="btn btn-secondary" onclick="resetApp()" style="font-size:0.8rem;padding:0.35rem 0.75rem;">重新开始</button> <button class="btn btn-secondary" onclick="openFeedback()" style="font-size:0.8rem;padding:0.35rem 0.75rem;">💬 反馈</button> <div style="position:relative;"><button class="btn btn-secondary" onclick="toggleThemeMenu()" style="font-size:0.8rem;padding:0.35rem 0.75rem;display:inline-flex;align-items:center;gap:0.3rem;" id="theme-btn" title="切换主题"><span id="theme-label">主题</span> <span style="font-size:0.65rem;">▼</span></button><div id="theme-menu" style="opacity:0;transform:translateY(-4px);transition:opacity 0.2s ease,transform 0.2s ease;pointer-events:none;position:absolute;top:100%;right:0;margin-top:0.3rem;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:0.3rem;z-index:60;min-width:130px;box-shadow:0 4px 12px rgba(0,0,0,0.15);backdrop-filter:blur(12px);"><button onclick="setTheme('light')" class="theme-opt">☀️ 暖色</button><button onclick="setTheme('dark')" class="theme-opt">🌙 暗色</button><button onclick="setTheme('auto')" class="theme-opt">💻 跟随系统</button></div></div>
     </div>
   </div>
 
@@ -455,9 +476,6 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
         <div class="hint-chips" id="hint-chips">
           <span class="hint-chip" onclick="quickStart('match')">📄 分析简历</span>
           <span class="hint-chip" onclick="quickStart('interview')">🎤 模拟面试</span>
-          <span class="hint-chip" onclick="quickStart('strategy')">📋 求职策略</span>
-          <span class="hint-chip" onclick="quickStart('pivot')">🔄 职业转型</span>
-          <span class="hint-chip" onclick="quickStart('salary')">💰 薪资谈判</span>
         </div>
         <form id="chat-form">
           <textarea id="user-input" rows="2" placeholder="输入消息，或粘贴简历 / JD..." onkeydown="handleKeyDown(event)"></textarea>
@@ -475,6 +493,9 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
 
   <!-- 面试区 -->
   <div id="interview-container"></div>
+
+  <!-- 反馈区 -->
+  <div id="feedback-container"></div>
 </div>
 
 <script>
@@ -486,7 +507,7 @@ var _warmCSS=document.getElementById('warm-theme').outerHTML;function toggleThem
 
 // ===== 状态 =====
 const WELCOME_MSG = `<div style="padding:0.5rem 0;">
-  <p style="font-size:1.15rem;margin-bottom:1.2rem;text-align:center;">你好！我是 <span style="color:#a78bfa;font-weight:700;">Offer 捕手</span>，你的全能 AI 求职助手。</p>
+  <p style="font-size:1.15rem;margin-bottom:1.2rem;text-align:center;">你好！我是 <span style="color:#a78bfa;font-weight:700;">Offer 捕手</span>，帮你做<span style="color:#a78bfa;font-weight:600;">简历分析</span>和<span style="color:#a78bfa;font-weight:600;">模拟面试</span>。</p>
   <div class="quick-row">
     <div class="quick-card" onclick="quickStart('match')">
       <div class="qc-icon">📄</div>
@@ -496,10 +517,6 @@ const WELCOME_MSG = `<div style="padding:0.5rem 0;">
       <div class="qc-icon">🎤</div>
       <div><div class="qc-title">模拟面试</div><div class="qc-desc">逐题考核评分</div></div>
     </div>
-    <div class="quick-card" onclick="quickStart('salary')">
-      <div class="qc-icon">💰</div>
-      <div><div class="qc-title">薪酬查询</div><div class="qc-desc">薪资谈判指导</div></div>
-    </div>
   </div>
   <p style="font-size:0.8rem;opacity:0.4;text-align:center;">或直接输入任何内容开始对话</p>
 </div>`;
@@ -507,7 +524,6 @@ let messages = [{ type: 'assistant', content: WELCOME_MSG, time: new Date(), _wi
 let attachedFile = null;
 let isAnalyzing = false;
 let currentReport = null;
-let cachedMarketInfo = null;
 let _hasSeenReport = false;
 let threadId = crypto.randomUUID();
 
@@ -677,14 +693,6 @@ function quickStart(mode) {
     enterMatchPrep();
     return;
   }
-  const triggers = {
-    strategy: '帮我制定求职策略，找找工作',
-    pivot: '我想规划一下职业转型',
-    salary: '帮我查一下薪资水平',
-  };
-  addMessage('user', triggers[mode]);
-  scrollToBottom();
-  sendChatMessage(triggers[mode]);
 }
 
 // 纯 SSE 发送（不做气泡/isAnalyzing 管理，调用方处理）
@@ -813,7 +821,7 @@ function handleSSEEvent(event, dataStr) {
       break;
 
     case 'tool_start':
-      const toolNames = { parse_resume: '解析简历···', parse_jd: '解析JD···', analyze_match: '正在深度分析（约10-20秒）···', research_market: '市场调研···' };
+      const toolNames = { parse_resume: '解析简历···', parse_jd: '解析JD···', analyze_match: '正在深度分析（约10-20秒）···' };
       showToolStatus(`⏳ ${toolNames[data.name] || data.name}...`);
       window._toolRunning = true;
       break;
@@ -837,20 +845,14 @@ function handleSSEEvent(event, dataStr) {
       // 删除所有流式气泡（match 模式不该有）
       messages = messages.filter(m => !m._streaming);
       renderMessages();
-      // 聊天隐藏 + 报告淡入（先渲染，不等市场数据）
+      // 聊天隐藏 + 报告淡入
       const chatEl = document.getElementById('chat-container');
       const reportEl = document.getElementById('report-container');
       if (chatEl) chatEl.style.display = 'none';
       reportEl.style.display = 'block';
       _hasSeenReport = false;
-      cachedMarketInfo = null;
-      renderReport(data.report, '', '', null);
+      renderReport(data.report);
       requestAnimationFrame(() => reportEl.classList.add('show'));
-      // 异步获取市场数据，拿到后注入报告底部
-      fetchMarketData(data.report).then(mkt => {
-        cachedMarketInfo = mkt;
-        injectMarketSection(mkt);
-      });
       break;
 
     case 'interview':
@@ -931,57 +933,174 @@ function hideToolStatus() {
   if (window._toolProgressTimer) { clearTimeout(window._toolProgressTimer); window._toolProgressTimer = null; }
 }
 
-// 获取市场数据
-async function fetchMarketData(report) {
-  try {
-    const jobInfo = report.hidden_fit?.company_style || '';
-    const resp = await fetch('/api/market', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ job_info: jobInfo, job_preference: '' })
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      return data.market || null;
-    }
-  } catch(e) {}
-  return null;
+// ===== 反馈页 =====
+let feedbackItems = [];
+let feedbackLoaded = false;
+
+// 记录本机已点过赞的 id，防止重复点赞（纯客户端，匿名场景的权衡）
+const votedKey = 'oh_voted';
+function votedSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(votedKey) || '[]')); } catch { return new Set(); }
+}
+function markVoted(id) {
+  const s = votedSet(); s.add(id);
+  localStorage.setItem(votedKey, JSON.stringify([...s]));
 }
 
-function injectMarketSection(marketInfo) {
-  if (!marketInfo) return;
-  const container = document.getElementById('report-container');
-  if (!container || container.style.display === 'none') return;
-  const existing = document.getElementById('market-section');
-  if (existing) existing.remove();
-  const div = document.createElement('div');
-  div.id = 'market-section';
-  div.className = 'card reveal-card';
-  div.style.animationDelay = '0s';
-  div.innerHTML = `
-    <h3 style="font-size:1.1rem;margin-bottom:0.75rem;">🌍 六、市场参考</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
-      <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-        <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">薪资参考</p>
-        <p style="font-weight:600;">${marketInfo.salary_range || '-'}</p>
-      </div>
-      <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-        <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">竞争度</p>
-        <p style="font-weight:600;color:${marketInfo.competition==='激烈'?'var(--error)':marketInfo.competition==='中等'?'var(--warning)':'var(--success)'};">${marketInfo.competition || '-'}</p>
-      </div>
-      <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-        <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">招聘趋势</p>
-        <p style="font-size:0.9rem;">${marketInfo.trend || '-'}</p>
-      </div>
-      <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-        <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">热门技能</p>
-        <div style="display:flex;flex-wrap:wrap;gap:0.25rem;">${(marketInfo.hot_skills||[]).map(s=>`<span class="badge badge-info">${s}</span>`).join('')}</div>
-      </div>
-    </div>
-    ${marketInfo.summary ? `<p style="margin-top:1rem;padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;font-size:0.9rem;color:#cbd5e1;">${marketInfo.summary}</p>` : ''}
-    <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-secondary);">市场数据基于 AI 分析和公开信息，仅供参考。</p>
-  `;
-  container.appendChild(div);
+function openFeedback() {
+  const chatEl = document.getElementById('chat-container');
+  const reportEl = document.getElementById('report-container');
+  const ivEl = document.getElementById('interview-container');
+  const fbEl = document.getElementById('feedback-container');
+  chatEl.style.display = 'none';
+  reportEl.style.display = 'none';
+  ivEl.style.display = 'none';
+  fbEl.style.display = 'block';
+  fbEl.classList.remove('show');
+  fbEl.innerHTML = '<div class="interview-wrap" style="text-align:center;padding:2rem;color:var(--text-secondary);">加载中...</div>';
+  requestAnimationFrame(() => fbEl.classList.add('show'));
+  window.scrollTo({top:0,behavior:'smooth'});
+  loadFeedback();
 }
+
+async function loadFeedback() {
+  try {
+    const resp = await fetch('/api/feedback');
+    const data = await resp.json();
+    feedbackItems = data.items || [];
+    feedbackLoaded = true;
+  } catch (e) {
+    showToast('加载失败: ' + (e.message || e));
+    feedbackItems = [];
+  }
+  renderFeedback();
+}
+
+function renderFeedback() {
+  const container = document.getElementById('feedback-container');
+  if (!container) return;
+  const voted = votedSet();
+
+  const itemsHtml = feedbackItems.map(fb => {
+    const votedThis = voted.has(fb.id);
+    const repliesHtml = (fb.replies || []).map(r => {
+      const rVoted = voted.has(r.id);
+      return `<div class="fb-reply">
+        <div class="fb-reply-text">${escapeHtml(r.content)}</div>
+        <div class="fb-reply-meta">
+          <span>${fmtDate(r.created_at)}</span>
+          <button class="fb-vote fb-vote-sm ${rVoted ? 'voted' : ''}" onclick="upvoteReply('${fb.id}','${r.id}')" ${rVoted ? 'disabled' : ''}>👍 ${r.upvotes || 0}</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="card fb-item">
+      <div class="fb-content">${escapeHtml(fb.content)}</div>
+      <div class="fb-meta">
+        <span>${fmtDate(fb.created_at)}</span>
+        <button class="fb-vote ${votedThis ? 'voted' : ''}" onclick="upvoteFeedback('${fb.id}')" ${votedThis ? 'disabled' : ''}>👍 同意 ${fb.upvotes || 0}</button>
+        <button class="fb-toggle" onclick="toggleReplies('${fb.id}')">💬 回复 (${(fb.replies||[]).length})</button>
+      </div>
+      <div class="fb-replies" id="replies-${fb.id}" style="display:none;">
+        ${repliesHtml}
+        <div class="fb-reply-form">
+          <textarea id="reply-input-${fb.id}" placeholder="写下你的回复..." rows="2"></textarea>
+          <button class="iv-submit" style="margin-top:0.4rem;" onclick="submitReply('${fb.id}')">回复</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="interview-wrap">
+    <div class="iv-header">
+      <div class="iv-title">💬 意见反馈</div>
+      <button class="iv-exit" onclick="exitFeedback()">✕ 返回</button>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem;">匿名发布，所有反馈公开可见。按"同意"数排序。</p>
+
+    <div class="card fb-item">
+      <textarea id="fb-new-input" placeholder="说说你的想法或建议..." rows="3" style="width:100%;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;"></textarea>
+      <button class="iv-submit" onclick="submitFeedback()">发布反馈</button>
+    </div>
+
+    <div id="fb-list">${itemsHtml || '<p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;padding:1rem;">还没有反馈，来发布第一条吧</p>'}</div>
+  </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function fmtDate(iso) {
+  try {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  } catch { return ''; }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function submitFeedback() {
+  const input = document.getElementById('fb-new-input');
+  const content = (input.value || '').trim();
+  if (!content) { showToast('请输入内容'); return; }
+  await feedbackAction('/api/feedback', { content });
+}
+
+async function submitReply(id) {
+  const input = document.getElementById('reply-input-' + id);
+  const content = (input.value || '').trim();
+  if (!content) { showToast('请输入回复内容'); return; }
+  const openId = id;
+  await feedbackAction(`/api/feedback/${id}/reply`, { content });
+  // 保持该条回复区展开
+  const el = document.getElementById('replies-' + openId);
+  if (el) el.style.display = 'block';
+}
+
+async function upvoteFeedback(id) {
+  if (votedSet().has(id)) return;
+  markVoted(id);
+  await feedbackAction(`/api/feedback/${id}/upvote`, {});
+}
+
+async function upvoteReply(fid, rid) {
+  if (votedSet().has(rid)) return;
+  markVoted(rid);
+  await feedbackAction(`/api/feedback/${fid}/reply/${rid}/upvote`, {});
+  const el = document.getElementById('replies-' + fid);
+  if (el) el.style.display = 'block';
+}
+
+async function feedbackAction(url, body) {
+  try {
+    const resp = await fetch(url, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '操作失败');
+    feedbackItems = data.items || [];
+    renderFeedback();
+  } catch (e) {
+    showToast('操作失败: ' + (e.message || e));
+  }
+}
+
+function toggleReplies(id) {
+  const el = document.getElementById('replies-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function exitFeedback() {
+  const fbEl = document.getElementById('feedback-container');
+  const chatEl = document.getElementById('chat-container');
+  fbEl.classList.remove('show');
+  fbEl.style.display = 'none';
+  fbEl.innerHTML = '';
+  chatEl.style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 
 // ===== 旧版兼容函数（保留但不再使用）=====
 function setCollectedInfo(info) { /* deprecated */ }
@@ -1052,7 +1171,7 @@ async function checkResponse(resp) {
 // runMatch 不再使用，Agent 通过 /api/chat 自动调度 Tools
 
 // ===== 报告渲染 =====
-function renderReport(report, resumeText, jobText, marketInfo) {
+function renderReport(report) {
   document.getElementById('chat-container').style.display = 'none';
   const container = document.getElementById('report-container');
   container.style.display = 'block';
@@ -1224,33 +1343,6 @@ function renderReport(report, resumeText, jobText, marketInfo) {
     }).join('')}</div>
   </div>`;
 
-  // 市场参考
-  if (marketInfo) {
-    html += `<div class="card reveal-card" style="animation-delay:0.4s">
-      <h3 style="font-size:1.1rem;margin-bottom:0.75rem;">🌍 六、市场参考</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
-        <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-          <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">薪资参考</p>
-          <p style="font-weight:600;">${marketInfo.salary_range || '-'}</p>
-        </div>
-        <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-          <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">竞争度</p>
-          <p style="font-weight:600;color:${marketInfo.competition==='激烈'?'var(--error)':marketInfo.competition==='中等'?'var(--warning)':'var(--success)'};">${marketInfo.competition || '-'}</p>
-        </div>
-        <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-          <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">招聘趋势</p>
-          <p style="font-size:0.9rem;">${marketInfo.trend || '-'}</p>
-        </div>
-        <div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;">
-          <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.25rem;">热门技能</p>
-          <div style="display:flex;flex-wrap:wrap;gap:0.25rem;">${(marketInfo.hot_skills||[]).map(s=>`<span class="badge badge-info">${s}</span>`).join('')}</div>
-        </div>
-      </div>
-      ${marketInfo.summary ? `<p style="margin-top:1rem;padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;font-size:0.9rem;color:#cbd5e1;">${marketInfo.summary}</p>` : ''}
-      <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-secondary);">市场数据基于 AI 分析和公开信息，仅供参考。</p>
-    </div>`;
-  }
-
   // 导出
   html += `<div class="card reveal-card" style="animation-delay:0.45s;display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
     <button class="btn btn-primary" onclick="exportMarkdown()">📥 导出 Markdown</button>
@@ -1261,7 +1353,7 @@ function renderReport(report, resumeText, jobText, marketInfo) {
     <button class="btn btn-primary" onclick="backToChat()" style="font-size:1.1rem;padding:0.9rem 2.5rem;background:linear-gradient(135deg,#6366f1,#a78bfa);">
       💬 继续对话，使用更多功能
     </button>
-    <p style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);">回到对话后你可以继续使用模拟面试、求职策略、职业转型、薪资谈判等功能</p>
+    <p style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);">回到对话后你可以继续使用模拟面试等功能</p>
   </div>`;
 
   container.innerHTML = html;
@@ -1357,7 +1449,6 @@ function resetApp() {
   attachedFile = null;
   isAnalyzing = false;
   currentReport = null;
-  cachedMarketInfo = null;
   _hasSeenReport = false;
   window._reportIncoming = false;
   window._suppressTokens = false;
@@ -1366,6 +1457,7 @@ function resetApp() {
   const chatEl = document.getElementById('chat-container');
   const reportEl = document.getElementById('report-container');
   const ivEl = document.getElementById('interview-container');
+  const fbEl = document.getElementById('feedback-container');
   chatEl.classList.remove('fade-out');
   chatEl.style.display = 'block';
   reportEl.classList.remove('show');
@@ -1374,6 +1466,7 @@ function resetApp() {
   ivEl.classList.remove('show');
   ivEl.style.display = 'none';
   ivEl.innerHTML = '';
+  if (fbEl) { fbEl.classList.remove('show'); fbEl.style.display = 'none'; fbEl.innerHTML = ''; }
   interviewQuestions = [];
   interviewIndex = 0;
   interviewAnswers = {};
@@ -1428,8 +1521,7 @@ function viewReport() {
   chatEl.style.display = 'none';
   reportEl.style.display = 'block';
   window._reportIncoming = true;
-  // 直接用缓存的 marketInfo，秒开
-  renderReport(currentReport, '', '', cachedMarketInfo);
+  renderReport(currentReport);
   requestAnimationFrame(() => reportEl.classList.add('show'));
 }
 
@@ -1552,14 +1644,8 @@ async function startMatch(btn) {
     sharedJDText = jdText;
     currentReport = data.report;
     _hasSeenReport = false;
-    cachedMarketInfo = null;
-    renderReport(data.report, resumeText, jdText, null);
+    renderReport(data.report);
     document.getElementById('report-container').classList.add('show');
-    // 异步加载市场数据
-    fetchMarketData(data.report).then(mkt => {
-      cachedMarketInfo = mkt;
-      injectMarketSection(mkt);
-    });
   } catch (err) {
     showToast('分析失败: ' + (err.message || err));
     if (btn) { btn.disabled = false; btn.textContent = '开始分析'; }

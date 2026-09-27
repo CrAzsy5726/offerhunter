@@ -142,16 +142,6 @@ type MatchReport struct {
 	Summary          string            `json:"summary"`
 }
 
-// ── Market info ──
-
-type MarketInfo struct {
-	SalaryRange string   `json:"salary_range"`
-	HotSkills   []string `json:"hot_skills"`
-	Trend       string   `json:"trend"`
-	Competition string   `json:"competition"`
-	Summary     string   `json:"summary"`
-}
-
 // ── Interview ──
 
 type InterviewQuestion struct {
