@@ -216,7 +216,9 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 /* 对话区 */
 #chat-container {
   flex: 1;
-  width: 100%; padding: 1.5rem 2rem; padding-bottom: 0;
+  width: 100%; padding: 1.5rem 2rem;
+  /* 为固定在底部的输入区预留空间，避免最后一条消息被遮挡 */
+  padding-bottom: 140px;
 }
 .messages { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
 .message {
@@ -245,14 +247,14 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .message .time {
   font-size: 0.7rem; opacity: 0.5; margin-top: 0.4rem;
 }
-/* 输入区域 */
+/* 输入区域：始终固定在视口底部 */
 .input-area {
   background: rgba(15,23,42,0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   padding: 1rem;
-  position: sticky; bottom: 0; z-index: 50;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
 }
 .input-area .inner { }
 .input-area form { display: flex; gap: 0.75rem; align-items: flex-end; }
@@ -272,16 +274,6 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 }
 .file-tag button { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; }
 .file-tag button:hover { color: var(--error); }
-.hint-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; }
-.hint-chips { display: flex; flex-wrap: nowrap; justify-content: center; gap: 0.22rem; margin-bottom: 0.5rem; }
-.hint-chip {
-  display: inline-flex; align-items: center; gap: 0.15rem;
-  padding: 0.26rem 0.42rem; font-size: 0.7rem;
-  background: var(--card-bg); color: var(--text-secondary);
-  border: 1px solid var(--border); border-radius: 999px;
-  cursor: pointer; transition: all 0.18s ease; white-space: nowrap;
-}
-.hint-chip:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-glow); }
 
 /* 初始功能列表（竖向、主题化） */
 .quick-row { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; margin-bottom: 0.8rem; }
@@ -366,10 +358,13 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .iv-summary { text-align: center; padding: 2rem 1rem; }
 .iv-prep-section { margin-bottom: 1.2rem; }
 .iv-prep-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
+.iv-required { color: var(--error); }
 .iv-prep-file { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; font-size: 0.85rem; color: var(--text-secondary); }
 .iv-prep-file.has-file { border-style: solid; border-color: var(--primary); color: var(--text); }
 .iv-prep-file.drag-over { border-color: var(--primary); background: var(--primary-glow); border-style: solid; }
-.iv-prep-file button { margin-left: auto; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
+.iv-file-status { flex-shrink: 0; margin-left: auto; color: var(--success); font-size: 0.8rem; font-weight: 600; }
+.iv-prep-file button { margin-left: 0.5rem; flex-shrink: 0; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
+.iv-prep-file:not(.has-file) button { margin-left: auto; }
 .iv-prep-file button:hover { color: var(--error); }
 .iv-prep-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem; }
 .iv-summary .iv-avg { font-size: 3rem; font-weight: 800; }
@@ -405,6 +400,7 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
   .header > div { gap: 0.35rem !important; }
   .header > div span:first-child { display: none; }
   #chat-container, #report-container { padding: 0.5rem; }
+  #chat-container { padding-bottom: 110px; }
   .card { padding: 0.85rem; }
   .message .bubble { max-width: 94%; }
   .input-area { padding: 0.4rem; }
@@ -412,7 +408,6 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
   .input-area .btn-send { padding: 0.45rem 0.9rem; font-size: 0.8rem; }
   .input-area form { gap: 0.3rem; }
   .input-area label.btn { padding: 0.45rem 0.7rem !important; }
-  .hint-text { font-size: 0.7rem; }
   #report-toc { right: 0.2rem; gap: 0.3rem; }
   #report-toc a { font-size: 0.6rem; }
   #report-toc a span:last-child { display: none; }
@@ -473,10 +468,6 @@ body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!impo
     <div class="input-area">
       <div class="inner">
         <div id="file-tags"></div>
-        <div class="hint-chips" id="hint-chips">
-          <span class="hint-chip" onclick="quickStart('match')">📄 分析简历</span>
-          <span class="hint-chip" onclick="quickStart('interview')">🎤 模拟面试</span>
-        </div>
         <form id="chat-form">
           <textarea id="user-input" rows="2" placeholder="输入消息，或粘贴简历 / JD..." onkeydown="handleKeyDown(event)"></textarea>
           <label class="btn btn-secondary" style="cursor:pointer;padding:0.75rem 1rem;" title="上传文件">
@@ -534,7 +525,8 @@ let interviewAnswers = {};   // { index: answer }
 let interviewGrades = {};    // { index: {score, comment, reference_answer} }
 let interviewDone = false;
 let interviewPrepFile = null;   // 准备页上传的简历文件
-let interviewPrepResumeText = ''; // 准备页简历文本（OCR/粘贴结果）
+let interviewPrepResumeText = ''; // 准备页简历内容（OCR 结果或带入的上次简历，不展示）
+let interviewPrepManualText = ''; // 准备页手动输入的简历文本（展示在文本框）
 let interviewPrepActive = false; // 是否处于面试准备页（用于拖拽路由）
 let interviewPrepOcrLoading = false; // 面试准备页简历 OCR 是否进行中
 let interviewPrepJDText = '';    // 面试准备页 JD 文本
@@ -542,7 +534,8 @@ let interviewPrepAbortCtrl = null; // 面试准备页 OCR 取消控制器
 
 let matchPrepActive = false;     // 是否处于匹配分析准备页
 let matchPrepFile = null;        // 匹配准备页上传的简历文件
-let matchPrepResumeText = '';    // 匹配准备页简历文本
+let matchPrepResumeText = '';    // 匹配准备页简历内容（OCR 结果或带入的上次简历，不展示）
+let matchPrepManualText = '';    // 匹配准备页手动输入的简历文本（展示在文本框）
 let matchPrepOcrLoading = false; // 匹配准备页简历 OCR 是否进行中
 let matchPrepJDText = '';        // 匹配准备页 JD 文本
 let matchPrepAbortCtrl = null;   // 匹配准备页 OCR 取消控制器
@@ -1129,7 +1122,9 @@ async function parsePDF(file, signal) {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ images }), signal
   });
   const data = await checkResponse(resp);
-  return data.resume?.raw_text || JSON.stringify(data.resume);
+  const text = data.resume?.raw_text;
+  if (!text) throw new Error('未识别到简历内容，请重试或改用文本粘贴');
+  return text;
 }
 
 async function parseImage(file, signal) {
@@ -1143,7 +1138,9 @@ async function parseImage(file, signal) {
       });
       try {
         const data = await checkResponse(resp);
-        resolve(data.resume?.raw_text || JSON.stringify(data.resume));
+        const text = data.resume?.raw_text;
+        if (!text) { reject(new Error('未识别到简历内容，请重试或改用文本粘贴')); return; }
+        resolve(text);
       } catch(e) { reject(e); }
     };
     reader.onerror = reject;
@@ -1153,8 +1150,9 @@ async function parseImage(file, signal) {
 
 async function loadPdfjs() {
   if (window._pdfjs) return window._pdfjs;
-  window._pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.min.mjs');
-  window._pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs';
+  // 本地托管 pdf.js：不依赖外网 CDN（jsdelivr 在国内不稳定）
+  window._pdfjs = await import('/static/vendor/pdf.min.mjs');
+  window._pdfjs.GlobalWorkerOptions.workerSrc = '/static/vendor/pdf.worker.min.mjs';
   return window._pdfjs;
 }
 
@@ -1477,6 +1475,7 @@ function resetApp() {
   matchPrepActive = false;
   matchPrepFile = null;
   matchPrepResumeText = '';
+  matchPrepManualText = '';
   matchPrepOcrLoading = false;
   matchPrepJDText = '';
   matchPrepAbortCtrl = null;
@@ -1484,6 +1483,7 @@ function resetApp() {
   interviewPrepActive = false;
   interviewPrepFile = null;
   interviewPrepResumeText = '';
+  interviewPrepManualText = '';
   interviewPrepOcrLoading = false;
   interviewPrepJDText = '';
   interviewPrepAbortCtrl = null;
@@ -1536,7 +1536,8 @@ function enterMatchPrep() {
   const reportEl = document.getElementById('report-container');
   const ivEl = document.getElementById('interview-container');
   matchPrepFile = null;
-  matchPrepResumeText = sharedResumeText;
+  matchPrepResumeText = sharedResumeText;   // 带入上次简历（显示为「上次的简历 · 已解析」）
+  matchPrepManualText = '';
   matchPrepJDText = sharedJDText;
   matchPrepActive = true;
   matchPrepOcrLoading = false;
@@ -1549,6 +1550,22 @@ function enterMatchPrep() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// 简历上传框：有简历时只显示「文件名 + 解析状态 + 移除」，不展示解析内容
+function renderResumeBox(boxId, inputId, onChangeFn, onClearFn, file, resumeText, ocrLoading) {
+  const hasResume = !!file || !!resumeText;
+  const name = file ? file.name : '上次的简历';
+  const status = ocrLoading ? '⏳ 识别中…' : '✓ 已解析';
+  const inner = hasResume
+    ? `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📎 ${escapeHtml(name)}</span>
+       <span class="iv-file-status">${status}</span>
+       <button onclick="${onClearFn}(event)" title="移除简历">✕</button>`
+    : '点击或拖拽上传 PDF / 图片简历';
+  return `<div class="iv-prep-file ${hasResume ? 'has-file' : ''}" id="${boxId}">
+    ${inner}
+    <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="${inputId}" onchange="${onChangeFn}(event)">
+  </div>`;
+}
+
 function renderMatchPrep(container) {
   container.innerHTML = `<div class="interview-wrap">
     <div class="iv-header">
@@ -1558,18 +1575,15 @@ function renderMatchPrep(container) {
     ${(sharedResumeText || sharedJDText) ? `<div class="iv-prep-hint" style="margin-bottom:0.6rem;color:var(--primary);">✓ 已带入上次的简历/JD，可直接修改</div>` : ''}
 
     <div class="iv-card iv-prep-section">
-      <div class="iv-prep-label">📄 上传简历（可选）</div>
-      <div class="iv-prep-file ${matchPrepFile ? 'has-file' : ''}" id="match-prep-file">
-        ${matchPrepFile ? `📎 ${matchPrepFile.name}` : '点击或拖拽上传 PDF / 图片简历'}
-        <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="match-prep-file-input" onchange="handleMatchFile(event)">
-      </div>
-      <div class="iv-prep-hint">也可在下方文本框直接粘贴简历文本</div>
-      <textarea id="match-prep-resume" placeholder="或粘贴简历文本..." style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepResumeText}</textarea>
+      <div class="iv-prep-label">📄 上传简历 <span class="iv-required">*</span></div>
+      ${renderResumeBox('match-prep-file', 'match-prep-file-input', 'handleMatchFile', 'clearMatchFile', matchPrepFile, matchPrepResumeText, matchPrepOcrLoading)}
+      <div class="iv-prep-hint">或直接在下方粘贴简历文本</div>
+      <textarea id="match-prep-resume" placeholder="在此粘贴简历文本..." oninput="matchPrepManualText=this.value" style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepManualText}</textarea>
     </div>
 
     <div class="iv-card iv-prep-section">
-      <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
-      <textarea id="match-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepJDText}</textarea>
+      <div class="iv-prep-label">💼 粘贴岗位 JD <span class="iv-required">*</span></div>
+      <textarea id="match-prep-jd" placeholder="粘贴岗位描述..." oninput="matchPrepJDText=this.value" style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${matchPrepJDText}</textarea>
     </div>
 
     <button class="iv-submit" onclick="startMatch(this)">开始分析</button>
@@ -1600,17 +1614,32 @@ async function processMatchFile(file) {
     if (file.type === 'application/pdf') text = await parsePDF(file, matchPrepAbortCtrl.signal);
     else if (file.type.startsWith('image/')) text = await parseImage(file, matchPrepAbortCtrl.signal);
     else text = await file.text();
+    // 识别结果只声明"已解析"，不把内容铺到文本框；文件成为简历来源
     matchPrepResumeText = text;
-    const ta = document.getElementById('match-prep-resume');
-    if (ta) ta.value = text;
+    matchPrepManualText = '';
   } catch (err) {
-    if (err.name === 'AbortError') { /* 已取消，静默 */ }
-    else showToast('简历识别失败: ' + (err.message || err));
+    // 用户撤销 / 退出触发的取消：UI 由调用方处理，这里不动
+    if (err.name === 'AbortError') return;
+    // 识别失败：回滚到未上传状态，避免"显示文件名但没有内容"的不一致
+    showToast('简历识别失败: ' + (err.message || err));
+    matchPrepFile = null;
+    matchPrepResumeText = '';
   } finally {
     matchPrepOcrLoading = false;
     matchPrepAbortCtrl = null;
     hideToolStatus();
+    // 收尾后统一重渲染，让状态从"识别中"变为"已解析"
+    if (matchPrepActive) renderMatchPrep(document.getElementById('report-container'));
   }
+}
+
+// 撤销已上传的简历（同时中断进行中的 OCR）
+function clearMatchFile(e) {
+  if (e) e.stopPropagation();
+  if (matchPrepAbortCtrl) matchPrepAbortCtrl.abort();
+  matchPrepFile = null;
+  matchPrepResumeText = '';
+  renderMatchPrep(document.getElementById('report-container'));
 }
 
 async function startMatch(btn) {
@@ -1618,8 +1647,9 @@ async function startMatch(btn) {
     showToast('请等待简历文字提取完成');
     return;
   }
-  const resumeText = (document.getElementById('match-prep-resume')?.value || '').trim() || matchPrepResumeText;
-  const jdText = (document.getElementById('match-prep-jd')?.value || '').trim();
+  // 简历来源优先级：上传文件（OCR）> 手动粘贴
+  const resumeText = (matchPrepResumeText || matchPrepManualText).trim();
+  const jdText = matchPrepJDText.trim();
   if (!resumeText) {
     showToast('请上传简历或粘贴简历文本');
     return;
@@ -1669,7 +1699,8 @@ function enterInterviewPrep() {
   const chatEl = document.getElementById('chat-container');
   const ivEl = document.getElementById('interview-container');
   interviewPrepFile = null;
-  interviewPrepResumeText = sharedResumeText;
+  interviewPrepResumeText = sharedResumeText;  // 带入上次简历（显示为「上次的简历 · 已解析」）
+  interviewPrepManualText = '';
   interviewPrepJDText = sharedJDText;
   interviewPrepActive = true;
   interviewPrepOcrLoading = false;
@@ -1688,20 +1719,18 @@ function renderInterviewPrep(container) {
       <button class="iv-exit" onclick="exitInterview()">✕ 退出</button>
     </div>
     ${(sharedResumeText || sharedJDText) ? `<div class="iv-prep-hint" style="margin-bottom:0.6rem;color:var(--primary);">✓ 已带入上次的简历/JD，可直接修改</div>` : ''}
+    <div class="iv-prep-hint" style="margin-bottom:0.8rem;">简历和 JD 至少提供一个；都提供时，题目会更贴合你的背景。</div>
 
     <div class="iv-card iv-prep-section">
-      <div class="iv-prep-label">📄 上传简历（可选）</div>
-      <div class="iv-prep-file ${interviewPrepFile ? 'has-file' : ''}" id="iv-prep-file">
-        ${interviewPrepFile ? `📎 ${interviewPrepFile.name}` : '点击或拖拽上传 PDF / 图片简历'}
-        <input type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" style="display:none" id="iv-prep-file-input" onchange="handleInterviewFile(event)">
-      </div>
-      <div class="iv-prep-hint">也可在下方文本框直接粘贴简历文本</div>
-      <textarea id="iv-prep-resume" placeholder="或粘贴简历文本..." style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepResumeText}</textarea>
+      <div class="iv-prep-label">📄 上传简历</div>
+      ${renderResumeBox('iv-prep-file', 'iv-prep-file-input', 'handleInterviewFile', 'clearInterviewFile', interviewPrepFile, interviewPrepResumeText, interviewPrepOcrLoading)}
+      <div class="iv-prep-hint">或直接在下方粘贴简历文本</div>
+      <textarea id="iv-prep-resume" placeholder="在此粘贴简历文本..." oninput="interviewPrepManualText=this.value" style="width:100%;min-height:90px;margin-top:0.5rem;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepManualText}</textarea>
     </div>
 
     <div class="iv-card iv-prep-section">
-      <div class="iv-prep-label">💼 粘贴岗位 JD（可选）</div>
-      <textarea id="iv-prep-jd" placeholder="粘贴岗位描述..." style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepJDText}</textarea>
+      <div class="iv-prep-label">💼 粘贴岗位 JD</div>
+      <textarea id="iv-prep-jd" placeholder="粘贴岗位描述..." oninput="interviewPrepJDText=this.value" style="width:100%;min-height:120px;padding:0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;line-height:1.6;resize:vertical;">${interviewPrepJDText}</textarea>
     </div>
 
     <button class="iv-submit" onclick="startInterviewWithMaterials(this)">开始面试</button>
@@ -1733,17 +1762,32 @@ async function processInterviewFile(file) {
     if (file.type === 'application/pdf') text = await parsePDF(file, interviewPrepAbortCtrl.signal);
     else if (file.type.startsWith('image/')) text = await parseImage(file, interviewPrepAbortCtrl.signal);
     else text = await file.text();
+    // 识别结果只声明"已解析"，不把内容铺到文本框；文件成为简历来源
     interviewPrepResumeText = text;
-    const ta = document.getElementById('iv-prep-resume');
-    if (ta) ta.value = text;
+    interviewPrepManualText = '';
   } catch (err) {
-    if (err.name === 'AbortError') { /* 已取消，静默 */ }
-    else showToast('简历识别失败: ' + (err.message || err));
+    // 用户撤销 / 退出触发的取消：UI 由调用方处理，这里不动
+    if (err.name === 'AbortError') return;
+    // 识别失败：回滚到未上传状态，避免"显示文件名但没有内容"的不一致
+    showToast('简历识别失败: ' + (err.message || err));
+    interviewPrepFile = null;
+    interviewPrepResumeText = '';
   } finally {
     interviewPrepOcrLoading = false;
     interviewPrepAbortCtrl = null;
     hideToolStatus();
+    // 收尾后统一重渲染，让状态从"识别中"变为"已解析"
+    if (interviewPrepActive) renderInterviewPrep(document.getElementById('interview-container'));
   }
+}
+
+// 撤销已上传的简历（同时中断进行中的 OCR）
+function clearInterviewFile(e) {
+  if (e) e.stopPropagation();
+  if (interviewPrepAbortCtrl) interviewPrepAbortCtrl.abort();
+  interviewPrepFile = null;
+  interviewPrepResumeText = '';
+  renderInterviewPrep(document.getElementById('interview-container'));
 }
 
 async function startInterviewWithMaterials(btn) {
@@ -1751,8 +1795,9 @@ async function startInterviewWithMaterials(btn) {
     showToast('请等待简历文字提取完成');
     return;
   }
-  const resumeText = (document.getElementById('iv-prep-resume')?.value || '').trim() || interviewPrepResumeText;
-  const jdText = (document.getElementById('iv-prep-jd')?.value || '').trim();
+  // 简历来源优先级：上传文件（OCR）> 手动粘贴
+  const resumeText = (interviewPrepResumeText || interviewPrepManualText).trim();
+  const jdText = interviewPrepJDText.trim();
   if (!resumeText && !jdText) {
     showToast('请至少上传简历或粘贴 JD');
     return;

@@ -57,6 +57,21 @@ const ResumeExtractionPrompt = `你是一个专业的简历解析专家。请从
 
 const ResumeExtractionInstruction = "请严格按照JSON格式返回，不要包含任何其他文字。"
 
+// ── Resume OCR (image → plain text) ──
+// Used for PDF/image resumes. The output must be plain text (not JSON) because
+// it is shown in the UI and later re-parsed by parse_resume.
+
+const ResumeOCRPrompt = `你是一个专业的简历文字识别专家。请从用户提供的简历图片中识别并提取出所有文字。
+
+## 要求
+1. 完整提取每一页的所有文字，不要遗漏任何信息
+2. 保持简历原有的结构顺序（如：个人信息、教育背景、专业技能、项目经历、实习经历等）
+3. **只输出简历文字本身**：不要输出 JSON，不要输出 Markdown 代码块，不要添加任何解释、总结或额外说明
+4. 保持原有的换行与分段
+5. 如果某处文字模糊，尽力识别；不要编造简历中没有的内容
+
+请直接输出识别出的简历文字。`
+
 // ── JD extraction ──
 
 const JDExtractionPrompt = `你是一个专业的招聘需求分析专家。请从以下岗位描述(JD)中提取结构化信息。

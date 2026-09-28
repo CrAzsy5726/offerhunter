@@ -43,8 +43,7 @@ func (p *ResumeParser) ParseFromImages(ctx context.Context, images []string) (st
 		return "", errors.New("no images provided")
 	}
 
-	system := prompts.ResumeExtractionPrompt +
-		"\n\n请从这个简历图片/文档中提取所有文字信息。注意这是多页简历的扫描/截图，请完整提取每一页的内容。"
+	system := prompts.ResumeOCRPrompt
 	userText := "这是一份简历的" + strconv.Itoa(len(images)) + "页截图。请识别并提取所有文字信息，包括个人信息、教育背景、技能、项目经历、实习经历等。"
 
 	parts := []openai.ChatMessagePart{
