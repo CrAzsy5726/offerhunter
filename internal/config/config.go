@@ -46,14 +46,14 @@ func get(key, fallback string) string {
 var (
 	DeepSeekAPIKey  = get("DEEPSEEK_API_KEY", "")
 	DeepSeekBaseURL = get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
-	DeepSeekModel   = get("DEEPSEEK_MODEL", "deepseek-chat")
+	DeepSeekModel   = get("DEEPSEEK_MODEL", "deepseek-flash")
 )
 
 // MiMo (multimodal LLM)
 var (
 	MiMoAPIKey  = get("MIMO_API_KEY", "")
 	MiMoBaseURL = get("MIMO_BASE_URL", "https://api.xiaomimimo.com/v1")
-	MiMoModel   = get("MIMO_MODEL", "mimo-v2.5")
+	MiMoModel   = get("MIMO_MODEL", "mimo-v2.6-flash")
 )
 
 // Server
