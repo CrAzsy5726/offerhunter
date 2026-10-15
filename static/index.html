@@ -24,6 +24,8 @@
   --border: rgba(148,163,184,0.1);
   --border-glow: rgba(99,102,241,0.2);
   --card-bg: rgba(30,41,59,0.5);
+  --panel-bg: rgba(30,41,59,0.3);
+  --code-bg: rgba(15,23,42,0.5);
   --success: #34d399;
   --error: #f87171;
   --warning: #fbbf24;
@@ -429,8 +431,8 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 #scroll-bottom-btn:hover{opacity:1!important;background:var(--card-bg)!important;border-color:var(--border-glow)!important;color:var(--primary)!important;box-shadow:0 4px 16px var(--primary-glow)!important}
 </style>
 <style id="warm-theme">
-:root{color-scheme:light;--primary:#4a9c5d;--primary-dark:#3d8450;--primary-glow:rgba(74,156,93,.25);--accent:#8cb369;--bg:#fef9ed;--bg-secondary:rgba(254,249,237,.9);--input-bg:rgba(254,249,237,.95);--text:#2d3a2e;--text-secondary:#7a8c7b;--border:rgba(100,130,100,.12);--border-glow:rgba(74,156,93,.2);--card-bg:rgba(254,249,237,.85);--success:#4a9c5d;--error:#e05555;--warning:#e8a830}
-body{color:var(--text)}.header,.input-area{background:rgba(254,249,237,.93)!important}.card{background:rgba(254,249,237,.85)!important;border-color:rgba(100,130,100,.12)!important}.card::before{background:radial-gradient(ellipse 80% 50% at 0 0,rgba(74,156,93,.04),transparent),radial-gradient(ellipse 80% 50% at 100% 100%,rgba(140,179,105,.03),transparent)!important}.bg-animated::before{background:radial-gradient(circle,rgba(74,156,93,.08),transparent 70%)!important}.bg-animated::after{background:radial-gradient(circle,rgba(140,179,105,.06),transparent 70%)!important}.message.assistant .bubble{background:rgba(254,249,237,.9)!important;border-color:rgba(100,130,100,.1)!important;color:var(--text)!important}.quick-card{background:rgba(74,156,93,.06)!important;border-color:rgba(74,156,93,.15)!important}.quick-card:hover{background:rgba(74,156,93,.15)!important;border-color:rgba(74,156,93,.4)!important}.badge-success,.badge-info{background:rgba(74,156,93,.12)!important;color:#4a9c5d!important;border-color:rgba(74,156,93,.25)!important}.badge-warning{background:rgba(232,168,48,.12)!important;color:#e8a830!important;border-color:rgba(232,168,48,.25)!important}.badge-error{background:rgba(224,85,85,.12)!important;color:#e05555!important;border-color:rgba(224,85,85,.25)!important}.gradient-text{background:linear-gradient(135deg,#4a9c5d,#8cb369);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.btn-secondary:hover{border-color:var(--primary);background:rgba(74,156,93,.08)!important}textarea::placeholder{color:var(--text-secondary)!important}#tool-status{background:rgba(254,249,237,.95)!important;border-color:rgba(74,156,93,.3)!important;color:#4a9c5d!important}#tool-status-bar{background:linear-gradient(90deg,#4a9c5d,#8cb369)!important}#report-banner{background:rgba(74,156,93,.1)!important;border-color:rgba(74,156,93,.2)!important}#scroll-bottom-btn{background:rgba(254,249,237,.85)!important;border-color:rgba(100,130,100,.15)!important;box-shadow:0 2px 8px rgba(0,0,0,.08)!important}#scroll-bottom-btn:hover{background:var(--card-bg)!important;border-color:var(--border-glow)!important;color:var(--primary)!important;box-shadow:0 4px 16px var(--primary-glow)!important}
+:root{color-scheme:light;--primary:#d97706;--primary-dark:#b45309;--primary-glow:rgba(217,119,6,.25);--accent:#f59e0b;--bg:#fdf6ec;--bg-secondary:rgba(253,246,236,.9);--input-bg:rgba(253,246,236,.95);--text:#1f2937;--text-secondary:#6b7280;--border:rgba(217,119,6,.12);--border-glow:rgba(217,119,6,.2);--card-bg:rgba(253,246,236,.85);--panel-bg:rgba(217,119,6,.07);--code-bg:rgba(217,119,6,.06);--success:#16a34a;--error:#dc2626;--warning:#f59e0b}
+body{color:var(--text)}.header,.input-area{background:rgba(253,246,236,.93)!important}.card{background:rgba(253,246,236,.85)!important;border-color:rgba(217,119,6,.12)!important}.card::before{background:radial-gradient(ellipse 80% 50% at 0 0,rgba(217,119,6,.04),transparent),radial-gradient(ellipse 80% 50% at 100% 100%,rgba(245,158,11,.03),transparent)!important}.bg-animated::before{background:radial-gradient(circle,rgba(217,119,6,.08),transparent 70%)!important}.bg-animated::after{background:radial-gradient(circle,rgba(245,158,11,.06),transparent 70%)!important}.message.assistant .bubble{background:rgba(253,246,236,.9)!important;border-color:rgba(217,119,6,.1)!important;color:var(--text)!important}.quick-card{background:rgba(217,119,6,.06)!important;border-color:rgba(217,119,6,.15)!important}.quick-card:hover{background:rgba(217,119,6,.15)!important;border-color:rgba(217,119,6,.4)!important}.badge-success,.badge-info{background:rgba(22,163,74,.12)!important;color:#16a34a!important;border-color:rgba(22,163,74,.25)!important}.badge-warning{background:rgba(245,158,11,.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,.25)!important}.badge-error{background:rgba(220,38,38,.12)!important;color:#dc2626!important;border-color:rgba(220,38,38,.25)!important}.gradient-text{background:linear-gradient(135deg,#d97706,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.btn-secondary:hover{border-color:var(--primary);background:rgba(217,119,6,.08)!important}textarea::placeholder{color:var(--text-secondary)!important}#tool-status{background:rgba(253,246,236,.95)!important;border-color:rgba(217,119,6,.3)!important;color:#d97706!important}#tool-status-bar{background:linear-gradient(90deg,#d97706,#f59e0b)!important}#report-banner{background:rgba(217,119,6,.1)!important;border-color:rgba(217,119,6,.2)!important}#scroll-bottom-btn{background:rgba(253,246,236,.85)!important;border-color:rgba(217,119,6,.15)!important;box-shadow:0 2px 8px rgba(0,0,0,.08)!important}#scroll-bottom-btn:hover{background:var(--card-bg)!important;border-color:var(--border-glow)!important;color:var(--primary)!important;box-shadow:0 4px 16px var(--primary-glow)!important}
 </style>
 <style>.theme-opt{display:block;width:100%;text-align:left;padding:.35rem .6rem;border:none;background:transparent;color:var(--text);cursor:pointer;border-radius:6px;font-size:.82rem}.theme-opt:hover{background:var(--primary-glow)}</style>
 
@@ -1231,7 +1233,7 @@ function renderReport(report) {
   // 总结
   html += `<div class="card reveal-card" style="animation-delay:0.1s">
     <h3 style="font-size:1.1rem;margin-bottom:0.75rem;">📝 分析总结</h3>
-    <p style="color:#cbd5e1;line-height:1.7;">${report.summary || '暂无总结'}</p>
+    <p style="color:var(--text);line-height:1.7;">${report.summary || '暂无总结'}</p>
   </div>`;
 
   // 硬性门槛
@@ -1240,7 +1242,7 @@ function renderReport(report) {
       ${report.threshold_check.passed ? '<span class="badge badge-success" style="margin-left:0.5rem;">全部通过</span>' : '<span class="badge badge-error" style="margin-left:0.5rem;">未完全通过</span>'}
     </h3>
     <div>${(report.threshold_check.items||[]).map(item => `
-      <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;margin-bottom:0.5rem;">
+      <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:var(--panel-bg);border-radius:8px;margin-bottom:0.5rem;">
         ${statusBadge(item.status)}
         <div>
           <p style="font-weight:600;">${item.category}: ${item.requirement}</p>
@@ -1262,14 +1264,14 @@ function renderReport(report) {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;">
       ${dims.map(d => {
         const item = c[d.key];
-        return `<div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;">
+        return `<div style="padding:1rem;background:var(--panel-bg);border-radius:10px;">
           <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">${d.label}</p>
           <p style="font-size:2rem;font-weight:700;color:${sc(item.score)};">${item.score}</p>
           <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.25rem;">${item.comment}</p>
-          <p style="color:var(--border-glow);font-size:0.8rem;margin-top:0.5rem;">📎 ${item.evidence}</p>
+          <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.5rem;">📎 ${item.evidence}</p>
         </div>`;
       }).join('')}
-      <div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+      <div style="padding:1rem;background:var(--panel-bg);border-radius:10px;display:flex;flex-direction:column;justify-content:center;align-items:center;">
         <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">整体竞争力</p>
         <p style="font-size:2.5rem;font-weight:800;color:${sc(c.overall_power)};">${c.overall_power}</p>
       </div>
@@ -1281,15 +1283,15 @@ function renderReport(report) {
   html += `<div class="card reveal-card" style="animation-delay:0.25s">
     <h3 style="font-size:1.1rem;margin-bottom:0.75rem;" id="r-sec-3">🔮 三、隐性契合分析 <span style="color:${sc(hf.score)};font-size:1.5rem;margin-left:0.5rem;">${hf.score}分</span></h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
-      <div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;">
+      <div style="padding:1rem;background:var(--panel-bg);border-radius:10px;">
         <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">公司风格匹配</p>
         <p style="font-size:0.95rem;">${hf.company_style || '-'}</p>
       </div>
-      <div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;">
+      <div style="padding:1rem;background:var(--panel-bg);border-radius:10px;">
         <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">成长路径匹配</p>
         <p style="font-size:0.95rem;">${hf.growth_path || '-'}</p>
       </div>
-      <div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;">
+      <div style="padding:1rem;background:var(--panel-bg);border-radius:10px;">
         <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">团队文化匹配</p>
         <p style="font-size:0.95rem;">${hf.team_culture || '-'}</p>
       </div>
@@ -1304,7 +1306,7 @@ function renderReport(report) {
   html += `<div class="card reveal-card" style="animation-delay:0.3s">
     <h3 style="font-size:1.1rem;margin-bottom:0.75rem;" id="r-sec-4">💡 四、简历优化建议</h3>
     <div>${tips.map(tip => `
-      <div style="padding:1rem;background:rgba(30,41,59,0.3);border-radius:10px;margin-bottom:0.75rem;border-left:4px solid ${tip.has_evidence?'var(--warning)':'#4b5563'};">
+      <div style="padding:1rem;background:var(--panel-bg);border-radius:10px;margin-bottom:0.75rem;border-left:4px solid ${tip.has_evidence?'var(--warning)':'#4b5563'};">
         <div style="margin-bottom:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
           ${tip.has_evidence ? '<span class="badge badge-success">有据可依</span>' : '<span class="badge badge-info">技能提升</span>'}
           <span class="badge badge-warning">${tip.category}</span>
@@ -1313,9 +1315,9 @@ function renderReport(report) {
         <p style="color:var(--error);font-size:0.9rem;margin-bottom:0.25rem;"><strong>问题:</strong> ${tip.problem}</p>
         <p style="color:var(--success);font-size:0.9rem;margin-bottom:0.5rem;"><strong>建议:</strong> ${tip.suggestion}</p>
         ${tip.has_evidence ? `
-          <div style="background:rgba(15,23,42,0.5);padding:0.75rem;border-radius:6px;font-size:0.85rem;font-family:monospace;">
+          <div style="background:var(--code-bg);padding:0.75rem;border-radius:6px;font-size:0.85rem;font-family:monospace;">
             <p style="color:var(--text-secondary);font-size:0.75rem;margin-bottom:0.25rem;">修改示例:</p>
-            <pre style="white-space:pre-wrap;">${tip.example}</pre>
+            <pre style="white-space:pre-wrap;color:var(--text);">${tip.example}</pre>
           </div>
         ` : `
           <div style="background:rgba(99,102,241,0.05);padding:0.75rem;border-radius:6px;font-size:0.85rem;border:1px solid rgba(99,102,241,0.15);">
@@ -1331,7 +1333,7 @@ function renderReport(report) {
     <h3 style="font-size:1.1rem;margin-bottom:0.75rem;" id="r-sec-5">📈 五、能力差距分析</h3>
     <div>${(report.gap_analysis||[]).map(gap => {
       const impColor = gap.importance==='high'?'var(--error)':gap.importance==='medium'?'var(--warning)':'var(--text-secondary)';
-      return `<div style="padding:0.75rem;background:rgba(30,41,59,0.3);border-radius:8px;margin-bottom:0.5rem;display:flex;align-items:flex-start;gap:0.75rem;">
+      return `<div style="padding:0.75rem;background:var(--panel-bg);border-radius:8px;margin-bottom:0.5rem;display:flex;align-items:flex-start;gap:0.75rem;">
         <div style="width:40px;height:40px;border-radius:8px;background:${impColor}15;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${impColor};font-weight:700;">${gap.importance==='high'?'高':gap.importance==='medium'?'中':'低'}</div>
         <div>
           <p style="font-weight:600;">${gap.skill}</p>
